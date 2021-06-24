@@ -142,7 +142,7 @@
       {{#each reports}}
         <li>
           {{!-- target site --}}
-          {{@key}}
+          {{@key}}{{#if originalName}} ({{originalName}}){{/if}}
           <ul>
           {{#each this}}
             <li>

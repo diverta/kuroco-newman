@@ -14,6 +14,7 @@ class ReportGenerator {
     };
 
     this.templatesPath = this.getTemplatePathConfig(newmanConfig);
+    this.mapping = this.getNewmanConfigTargetMapping(newmanConfig);
 
     this.files = new Files(newmanConfig);
   }
@@ -38,6 +39,16 @@ class ReportGenerator {
       );
     }
     return templateConfig;
+  }
+
+  getNewmanConfigTargetMapping(newmanConfig) {
+    const mapping = {};
+    newmanConfig.target.forEach((target) => {
+      const targetName =
+        typeof target.alias === 'string' ? target.alias : target.name;
+      mapping[targetName] = target;
+    });
+    return mapping;
   }
 
   getRootPath() {
@@ -94,7 +105,11 @@ class ReportGenerator {
         const [site, id, type, fileName] = href.split('/', 4);
         const collectionName = fileName.replace(/\.html$/, '');
         if (!reports.hasOwnProperty(site)) {
+          const targetConfig = this.mapping[site];
           reports[site] = {};
+          if (typeof targetConfig.alias === 'string') {
+            reports[site].originalName = targetConfig.name;
+          }
         }
         if (!reports[site].hasOwnProperty(id)) {
           reports[site][id] = {};

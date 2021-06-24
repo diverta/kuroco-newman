@@ -1,5 +1,8 @@
 const appRoot = require('app-root-path');
+const { GlobSync } = require('glob');
 const glob = require('glob');
+const fs = require('fs');
+const path = require('path');
 
 class Files {
   constructor(newmanConfig) {
@@ -38,7 +41,43 @@ class Files {
   // }
 
   validateDirectoryStructure() {
-    // TODO: Add validation to check whether collections are put with valid directory structure
+    for (const target of this.newmanConfig.target) {
+      const environmentFile = path.join(
+        this.getEnvironmentsDir(target.name),
+        target.environment
+      );
+      // environment file validation
+      if (!fs.existsSync(environmentFile)) {
+        const relPath = environmentFile.replace(`${appRoot}/`, '');
+        return [`Environment file not found: ${relPath}`];
+      }
+      for (const api of target.apis) {
+        for (const testType in api.collections) {
+          const collectionsDir = this.getCollectionsDir(
+            target.name,
+            api.id,
+            testType
+          );
+          const relPath = collectionsDir.replace(`${appRoot}/`, '');
+          try {
+            const collectionStat = fs.statSync(collectionsDir);
+            if (!collectionStat.isDirectory()) {
+              return [`Collection directory not found: ${relPath}`];
+            }
+          } catch (err) {
+            if (err.code == 'ENOENT') {
+              return [`Collection directory not found: ${relPath}`];
+            } else {
+              throw err;
+            }
+          }
+          // const collectionFilesPattern = path.join(
+          //   this.getCollectionsDir(target.name, api.id, testType),
+          //   api.collections[testType]
+          // );
+        }
+      }
+    }
     return [];
   }
 }
