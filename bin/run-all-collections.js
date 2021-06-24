@@ -2,8 +2,8 @@
 
 'use strict';
 
-const { CollectionRunner } = require('../runner');
-const { NewmanConfig } = require('../config');
+const { CollectionRunner } = require('../src/newman/runner');
+const { NewmanConfig } = require('../src/newman/config');
 
 const newmanConfig = NewmanConfig.load();
 const runner = new CollectionRunner(newmanConfig);

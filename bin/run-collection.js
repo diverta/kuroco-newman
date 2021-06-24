@@ -7,8 +7,8 @@ const path = require('path');
 const fs = require('fs');
 const appRoot = require('app-root-path');
 
-const { CollectionRunner } = require('../runner');
-const { NewmanConfig } = require('../config');
+const { CollectionRunner } = require('../src/newman/runner');
+const { NewmanConfig } = require('../src/newman/config');
 
 const [, , collectionFile, environmentFile, ...options] = process.argv;
 
