@@ -16,8 +16,16 @@ class CollectionRunner {
     this.reportGenerator = new ReportGenerator(newmanConfig);
   }
 
-  run(collectionFile, environmentFile, targetSite, apiId, testType) {
+  run(
+    collectionFile,
+    environmentFile,
+    targetSite,
+    apiId,
+    testType,
+    alias = null
+  ) {
     const reportRootPath = this.reportGenerator.getRootPath();
+    const targetName = alias || targetSite;
 
     const collectionName = path.parse(collectionFile).name;
     return new Promise((resolve, reject) => {
@@ -28,14 +36,14 @@ class CollectionRunner {
           reporters: ['cli', 'htmlextra'],
           reporter: {
             htmlextra: {
-              export: `${reportRootPath}/${targetSite}/${apiId}/${testType}/${collectionName}.html`,
+              export: `${reportRootPath}/${targetName}/${apiId}/${testType}/${collectionName}.html`,
             },
           },
           workingDir: `${this.absoluteBaseDir}/${targetSite}`,
         },
         (err, summary) => {
           this.reportGenerator.writeSummary(
-            `${targetSite}/${apiId}/${testType}`,
+            `${targetName}/${apiId}/${testType}`,
             collectionName,
             summary
           );
@@ -75,7 +83,8 @@ class CollectionRunner {
                 environmentFile,
                 site.name,
                 api.id,
-                testType
+                testType,
+                site.alias
               )
             );
           });
