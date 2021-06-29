@@ -1,5 +1,5 @@
 const fs = require('fs');
-const appRoot = require('app-root-path');
+const path = require('path');
 const NewmanConfigError = require('./NewmanConfigError.js');
 const Files = require('../runner/Files.js');
 
@@ -7,7 +7,7 @@ const configFileName = 'kuroco-newman.config.json';
 
 class NewmanConfig {
   static load() {
-    const configPath = appRoot.resolve(configFileName);
+    const configPath = path.resolve(process.cwd(), configFileName);
     if (!fs.existsSync(configPath)) {
       throw new Error([
         `Newman configuration file '${configFileName}' is not found`,

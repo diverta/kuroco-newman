@@ -1,7 +1,6 @@
 const glob = require('glob');
 const path = require('path');
 const newman = require('newman');
-const appRoot = require('app-root-path');
 
 const Files = require('./Files.js');
 const ReportGenerator = require('../reports/ReportGenerator');
@@ -10,7 +9,10 @@ class CollectionRunner {
   constructor(newmanConfig) {
     this.newmanConfig = newmanConfig;
 
-    this.absoluteBaseDir = appRoot.resolve(this.newmanConfig.baseDir);
+    this.absoluteBaseDir = path.resolve(
+      process.cwd(),
+      this.newmanConfig.baseDir
+    );
 
     this.files = new Files(newmanConfig);
     this.reportGenerator = new ReportGenerator(newmanConfig);

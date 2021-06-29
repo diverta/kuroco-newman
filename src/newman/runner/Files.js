@@ -1,4 +1,3 @@
-const appRoot = require('app-root-path');
 const { GlobSync } = require('glob');
 const glob = require('glob');
 const fs = require('fs');
@@ -7,7 +6,10 @@ const path = require('path');
 class Files {
   constructor(newmanConfig) {
     this.newmanConfig = newmanConfig;
-    this.absoluteBaseDir = appRoot.resolve(this.newmanConfig.baseDir);
+    this.absoluteBaseDir = path.resolve(
+      process.cwd(),
+      this.newmanConfig.baseDir
+    );
   }
 
   getEnvironmentsDir(targetName) {
@@ -48,7 +50,7 @@ class Files {
       );
       // environment file validation
       if (!fs.existsSync(environmentFile)) {
-        const relPath = environmentFile.replace(`${appRoot}/`, '');
+        const relPath = environmentFile.replace(`${process.cwd()}/`, '');
         return [`Environment file not found: ${relPath}`];
       }
       for (const api of target.apis) {
@@ -58,7 +60,7 @@ class Files {
             api.id,
             testType
           );
-          const relPath = collectionsDir.replace(`${appRoot}/`, '');
+          const relPath = collectionsDir.replace(`${process.cwd()}/`, '');
           try {
             const collectionStat = fs.statSync(collectionsDir);
             if (!collectionStat.isDirectory()) {
