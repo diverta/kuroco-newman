@@ -1,13 +1,13 @@
 const glob = require('glob');
 const fs = require('fs');
 const handlebars = require('handlebars');
-const appRoot = require('app-root-path');
+const path = require('path');
 
 const Files = require('../runner/Files.js');
 
 class ReportGenerator {
   constructor(newmanConfig) {
-    const baseDir = appRoot.resolve(newmanConfig.report.outputDir);
+    const baseDir = path.resolve(process.cwd(), newmanConfig.report.outputDir);
     this.reportsPath = {
       baseDir,
       summaryDir: `${baseDir}/summary`,
@@ -27,15 +27,21 @@ class ReportGenerator {
       (conf, key) => {
         return {
           conf,
-          ...{ [key]: appRoot.resolve(newmanConfig.report.templates[key]) },
+          ...{
+            [key]: path.resolve(
+              process.cwd(),
+              newmanConfig.report.templates[key]
+            ),
+          },
         };
       },
       {}
     );
     // Use default template if custom template is not configured
     if (!templateConfig.index) {
-      templateConfig.index = appRoot.resolve(
-        'src/newman/reports/templates/reports-top.hbs'
+      templateConfig.index = path.resolve(
+        __dirname,
+        'templates/reports-top.hbs'
       );
     }
     return templateConfig;
@@ -100,7 +106,7 @@ class ReportGenerator {
     glob
       .sync(`${this.reportsPath.baseDir}/*/*/*/*.html`)
       .forEach((absolutePath) => {
-        const relPath = absolutePath.replace(`${appRoot}/`, '');
+        const relPath = absolutePath.replace(`${process.cwd()}/`, '');
         const href = relPath.replace(/^(\.\/)?reports\//, '');
         const [site, id, type, fileName] = href.split('/', 4);
         const collectionName = fileName.replace(/\.html$/, '');

@@ -5,7 +5,6 @@
 const glob = require('glob');
 const path = require('path');
 const fs = require('fs');
-const appRoot = require('app-root-path');
 
 const { CollectionRunner } = require('../src/newman/runner');
 const { NewmanConfig } = require('../src/newman/config');
@@ -41,8 +40,10 @@ if (
   !apiId ||
   !targetSite ||
   collectionPath !=
-    appRoot.resolve(
-      `${newmanConfig.baseDir}/${targetSite}/apis/${apiId}/collections/${testType}/${fileName}`
+    path.resolve(
+      `${process.cwd()}/${
+        newmanConfig.baseDir
+      }/${targetSite}/apis/${apiId}/collections/${testType}/${fileName}`
     )
 ) {
   console.error(`Collection file is not placed collectly.`);
