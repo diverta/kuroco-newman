@@ -112,16 +112,16 @@ class ReportGenerator {
         const collectionName = fileName.replace(/\.html$/, '');
         if (!reports.hasOwnProperty(site)) {
           const targetConfig = this.mapping[site];
-          reports[site] = {};
+          reports[site] = { apis: {} };
           if (typeof targetConfig.alias === 'string') {
             reports[site].originalName = targetConfig.name;
           }
         }
-        if (!reports[site].hasOwnProperty(id)) {
-          reports[site][id] = {};
+        if (!reports[site].apis.hasOwnProperty(id)) {
+          reports[site].apis[id] = {};
         }
-        if (!reports[site][id].hasOwnProperty(type)) {
-          reports[site][id][type] = {};
+        if (!reports[site].apis[id].hasOwnProperty(type)) {
+          reports[site].apis[id][type] = {};
         }
         // check summary
         const summary = JSON.parse(
@@ -130,7 +130,7 @@ class ReportGenerator {
           )
         );
 
-        reports[site][id][type][collectionName] = {
+        reports[site].apis[id][type][collectionName] = {
           href: href,
           failures: summary.run.failures.length,
         };
