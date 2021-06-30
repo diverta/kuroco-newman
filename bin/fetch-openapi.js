@@ -1,65 +1,76 @@
 #!/usr/bin/env node
 
 /**
- * Script to fetch openapi.json from kuroco-dev
+ * Script to fetch openapi.json from kuroco site
+ *
+ * bin/fetch-openapi.js kuroco-test --id 1 -key ecaaa5243bc3e977c0acde6c56e1e111
+ *
+ * [kuroco-api.config.json]
+ * {
+ *   "kuroco-test": {
+ *     "url": "https://kuroco-test.a.kuroco.app",
+ *     "lang": "en"
+ *   }
+ * }
  */
-const fetch = require('node-fetch');
-const path = require('path');
-const fs = require('fs');
-const queryString = require('query-string');
 
-const config = require(path.resolve(process.cwd(), 'kuroco-api.config.json'));
+const fetch = require("node-fetch");
+const path = require("path");
+const fs = require("fs");
+const queryString = require("query-string");
+
+const config = require(path.resolve(process.cwd(), "kuroco-api.config.json"));
 const args = process.argv.slice(2);
 
 const targetName = args[0];
 if (targetName === undefined) {
-  console.error('Target name must be specified');
+  console.error("Target name must be specified");
   process.exit(1);
 }
 if (config[targetName] === undefined) {
-  console.error('Configuration for specified target not found');
+  console.error("Configuration for specified target not found");
   process.exit(1);
 }
 
-if (!args.includes('-i') && !args.includes('--id')) {
-  console.error('Id must be specified');
+if (!args.includes("-i") && !args.includes("--id")) {
+  console.error("Id must be specified");
   process.exit(1);
 }
-if (!args.includes('-k') && !args.includes('--key')) {
-  console.error('SDK key must be specified');
+if (!args.includes("-k") && !args.includes("--key")) {
+  console.error("SDK key must be specified");
   process.exit(1);
 }
 
 let apiId;
 let sdkKey;
-let outputPath = './openapi.json';
+let outputPath = "./openapi.json";
 
 for (const [i, v] of args.entries()) {
   const nextVal = args[i + 1];
   switch (v) {
-    case '-i':
-    case '--id':
+    case "-i":
+    case "--id":
       if (!Number.isInteger(parseInt(nextVal))) {
-        console.error('Id should be number');
+        console.error("Id should be number");
         process.exit(1);
       }
       apiId = nextVal;
       break;
-    case '-k':
-    case '--key':
+    case "-k":
+    case "--key":
       if (nextVal === undefined) {
-        console.error('SDK key must be specified: -k SDK_KEY_FOR_YOUR_API');
+        console.error("SDK key must be specified: -k SDK_KEY_FOR_YOUR_API");
         process.exit(1);
       }
       sdkKey = nextVal;
       break;
-    case '-o':
-    case '--output':
+    case "-o":
+    case "--output":
       if (nextVal === undefined) {
-        console.error('Output path must be specified: -o path/to/openapi.json');
+        console.error("Output path must be specified: -o path/to/openapi.json");
         process.exit(1);
       }
-      outputPath = outputPath;
+      outputPath = nextVal;
       break;
     default:
       break;
@@ -67,14 +78,20 @@ for (const [i, v] of args.entries()) {
 }
 
 const apiUrl = config[targetName].url;
-const lang = config[targetName].lang;
+const lang = config[targetName].lang || null;
 
 (async () => {
+  const queries = {
+    api_id: apiId,
+    _lang: lang,
+    sdk_key: sdkKey,
+  };
   // Get openapi data
   const openapi_response = await fetch(
-    `${apiUrl}/direct/rcms_api/openapi/?api_id=${apiId}&_lang=${lang}&sdk_key=${sdkKey}`,
+    `${apiUrl}/direct/rcms_api/openapi/?` +
+      queryString.stringify(queries, { skipNull: true }),
     {
-      method: 'GET',
+      method: "GET",
     }
   )
     .then((res) => res.json())

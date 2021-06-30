@@ -6,6 +6,7 @@
   "license": "UNLICENSED",
   "main": "src/index.js",
   "bin": {
+    "kuroco-newman-fetch-openapi": "bin/fetch-openapi.js",
     "kuroco-newman-generate-reports-index": "bin/generate-reports-index.js",
     "kuroco-newman-openapi-to-collection": "bin/openapi-to-collection.js",
     "kuroco-newman-run-all-collections": "bin/run-all-collections.js",
