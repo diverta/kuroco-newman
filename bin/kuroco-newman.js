@@ -4,14 +4,7 @@
 
 const { program } = require('commander');
 
-// program
-//   .command('run')
-//   .description(`run all collections`)
-//   .action((args) => {
-//     console.log('run');
-//     console.log(args);
-//   });
-
+// kuroco-newman run
 program
   .command('run')
   .description(`run collections`)
@@ -20,75 +13,70 @@ program
     `specify environment file`
   )
   .option('-c, --collection <collection>', `specify collection file`)
-  .action((args) => {
+  .action((options) => {
     if (
-      args.hasOwnProperty('collection') ||
-      args.hasOwnProperty('environment')
+      options.hasOwnProperty('collection') ||
+      options.hasOwnProperty('environment')
     ) {
       // run specified collection
       if (
-        !args.hasOwnProperty('collection') ||
-        !args.hasOwnProperty('environment')
+        !options.hasOwnProperty('collection') ||
+        !options.hasOwnProperty('environment')
       ) {
         console.error(
           `If specify collection or environment, both are required.`
         );
         process.exit(1);
       }
-      process.argv = [
-        process.argv[0],
-        process.argv[1],
-        args.collection,
-        args.environment,
-      ];
-      require('./run-collection.js');
+      const runCollection = require('./run-collection.js');
+      runCollection(options.collection, options.environment);
     } else {
       // run all collections
-      require('./run-all-collections.js');
+      const runAll = require('./run-all-collections.js');
+      runAll();
     }
   });
-// program.command('openapi', 'openapi');
 
+// kuroco-newman openapi-fetch
 program
   .command('openapi-fetch')
   .description('fetch openapi')
+  .argument('<target>', `target site`)
   .requiredOption('-i, --id <id>', `API id`)
   .requiredOption('-k, --key <sdk_key>', `SDK key`)
   .option('-o, --output <output>', `openapi.json output path`)
-  .action((args) => {
-    process.argv = [
-      process.argv[0],
-      process.argv[1],
-      '--id',
-      args.id,
-      '--key',
-      args.key,
-    ];
-    if (args.hasOwnProperty('output')) {
-      process.argv.push('--output', args.output);
+  .action((target, options) => {
+    const fetchOpenapi = require('./fetch-openapi.js');
+    if (options.hasOwnProperty('output')) {
+      fetchOpenapi(target, options.id, options.key, options.output);
+    } else {
+      fetchOpenapi(target, options.id, options.key);
     }
-    require('./fetch-openapi.js');
   });
 
+// kuroco-newman openapi-to-collection
 program
   .command('openapi-to-collection')
   .description(`update collection from openapi.json`)
+  .argument('<openapi>', `openapi.json`)
+  .argument('<collection>', `collection.json`)
   .option('-o, --output <output>', `collection output path`)
-  .action((args) => {
-    process.argv = [process.argv[0], process.argv[1]];
-    if (args.hasOwnProperty('output')) {
-      process.argv.push('-o', args.output);
+  .action((openapi, collection, options) => {
+    const openapiToCollection = require('./openapi-to-collection.js');
+    if (options.hasOwnProperty('output')) {
+      openapiToCollection(openapi, collection, options.output);
     } else {
-      process.argv.push('-w');
+      openapiToCollection(openapi, collection);
     }
-    require('./openapi-to-collection.js');
   });
 
+// kuroco-nreman report-generate-index
 program
   .command('report-generate-index')
   .description('generate index')
-  .action((args) => {
-    require('./generate-reports-index.js');
+  .action((options) => {
+    const generateIndex = require('./generate-reports-index.js');
+    generateIndex();
   });
 
 program.parse();

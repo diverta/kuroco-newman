@@ -5,12 +5,14 @@
 const { CollectionRunner } = require('../src/newman/runner');
 const { NewmanConfig } = require('../src/newman/config');
 
-const newmanConfig = NewmanConfig.load();
-const runner = new CollectionRunner(newmanConfig);
+module.exports = () => {
+  const newmanConfig = NewmanConfig.load();
+  const runner = new CollectionRunner(newmanConfig);
 
-// Run all collections
-runner.runAll().then((results) => {
-  if (results.some((result) => result.status === 'rejected')) {
-    process.exit(1);
-  }
-});
+  // Run all collections
+  runner.runAll().then((results) => {
+    if (results.some((result) => result.status === 'rejected')) {
+      process.exit(1);
+    }
+  });
+};
