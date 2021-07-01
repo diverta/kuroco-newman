@@ -6,11 +6,7 @@
   "license": "UNLICENSED",
   "main": "src/index.js",
   "bin": {
-    "kuroco-newman-fetch-openapi": "bin/fetch-openapi.js",
-    "kuroco-newman-generate-reports-index": "bin/generate-reports-index.js",
-    "kuroco-newman-openapi-to-collection": "bin/openapi-to-collection.js",
-    "kuroco-newman-run-all-collections": "bin/run-all-collections.js",
-    "kuroco-newman-run-collection": "bin/run-collection.js"
+    "kuroco-newman": "bin/kuroco-newman.js"
   },
   "scripts": {},
   "repository": {
@@ -18,6 +14,7 @@
     "url": "git+https://github.com/sakaguchi-diverta/kuroco-newman.git"
   },
   "dependencies": {
+    "commander": "^8.0.0",
     "fs": "0.0.1-security",
     "glob": "^7.1.6",
     "handlebars": "^4.7.7",

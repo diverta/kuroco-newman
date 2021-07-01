@@ -17,36 +17,78 @@ program
   .description(`run collections`)
   .option(
     '-e, --environment, --env <environment-file>',
-    `specify collection file`
+    `specify environment file`
   )
+  .option('-c, --collection <collection>', `specify collection file`)
   .action((args) => {
-    console.log('run collection');
-    console.log(args);
+    if (
+      args.hasOwnProperty('collection') ||
+      args.hasOwnProperty('environment')
+    ) {
+      // run specified collection
+      if (
+        !args.hasOwnProperty('collection') ||
+        !args.hasOwnProperty('environment')
+      ) {
+        console.error(
+          `If specify collection or environment, both are required.`
+        );
+        process.exit(1);
+      }
+      process.argv = [
+        process.argv[0],
+        process.argv[1],
+        args.collection,
+        args.environment,
+      ];
+      require('./run-collection.js');
+    } else {
+      // run all collections
+      require('./run-all-collections.js');
+    }
   });
 // program.command('openapi', 'openapi');
 
 program
   .command('openapi-fetch')
-  .description('')
+  .description('fetch openapi')
+  .requiredOption('-i, --id <id>', `API id`)
+  .requiredOption('-k, --key <sdk_key>', `SDK key`)
+  .option('-o, --output <output>', `openapi.json output path`)
   .action((args) => {
-    console.log('openapi fetch');
-    console.log(args);
+    process.argv = [
+      process.argv[0],
+      process.argv[1],
+      '--id',
+      args.id,
+      '--key',
+      args.key,
+    ];
+    if (args.hasOwnProperty('output')) {
+      process.argv.push('--output', args.output);
+    }
+    require('./fetch-openapi.js');
   });
 
 program
   .command('openapi-to-collection')
-  .description('')
+  .description(`update collection from openapi.json`)
+  .option('-o, --output <output>', `collection output path`)
   .action((args) => {
-    console.log('openapi to-collection');
-    console.log(args);
+    process.argv = [process.argv[0], process.argv[1]];
+    if (args.hasOwnProperty('output')) {
+      process.argv.push('-o', args.output);
+    } else {
+      process.argv.push('-w');
+    }
+    require('./openapi-to-collection.js');
   });
 
 program
   .command('report-generate-index')
   .description('generate index')
   .action((args) => {
-    console.log('report generate-index');
-    console.log(args);
+    require('./generate-reports-index.js');
   });
 
 program.parse();
