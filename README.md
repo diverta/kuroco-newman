@@ -108,4 +108,3 @@ npx kuroco-newman run
 # Run only specific Postman collection
 npx kuroco-newman run -e path/to/your/environment_file -f path/to/your/collection_file
 ```
-```
