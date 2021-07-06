@@ -61,25 +61,23 @@ class NewmanConfig {
         return [`Name or alias '${targetName}' is duplicated`];
       }
       targetNames.push(targetName);
-      if (!Array.isArray(target.apis)) {
-        return ["Array 'apis' should be set for each target"];
+      if (!Array.isArray(target.collections)) {
+        return ["Array 'collections' should be set for each target"];
       }
-      for (const api of target.apis) {
+      for (const api of target.collections) {
         if (typeof api !== 'object') {
           return ["Each item of array 'apis' should be an object"];
         }
         if (typeof api.id !== 'string') {
           return ["String 'id' should be set for each items of 'apis'"];
         }
-        if (typeof api.collections !== 'object') {
-          return [
-            "Object 'collections' should be set for each items of 'apis'",
-          ];
+        if (typeof api.files !== 'object') {
+          return ["Object 'files' should be set for each items of 'apis'"];
         }
-        for (const type in api.collections) {
-          // glob pattern: api.collections[type]
-          if (typeof api.collections[type] !== 'string') {
-            return ["Each item of object 'collections' should be a string"];
+        for (const type in api.files) {
+          // glob pattern: api.files[type]
+          if (typeof api.files[type] !== 'string') {
+            return ["Each item of object 'files' should be a string"];
           }
         }
       }

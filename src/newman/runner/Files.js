@@ -17,13 +17,13 @@ class Files {
   }
 
   getCollectionsDir(targetName, id, type) {
-    return `${this.absoluteBaseDir}/${targetName}/apis/${id}/collections/${type}`;
+    return `${this.absoluteBaseDir}/${targetName}/collections/${id}/${type}`;
   }
 
   // getAllRunnableCollections() {
   //   const collections = this.newmanConfig.target.reduce((list, target) => {
   //     return [
-  //       ...list,
+  //       ...list
   //       ...target.apis.map((api) => {
   //         return Object.keys(api.collections).reduce(
   //           (paths, type) => [
@@ -53,8 +53,8 @@ class Files {
         const relPath = environmentFile.replace(`${process.cwd()}/`, '');
         return [`Environment file not found: ${relPath}`];
       }
-      for (const api of target.apis) {
-        for (const testType in api.collections) {
+      for (const api of target.collections) {
+        for (const testType in api.files) {
           const collectionsDir = this.getCollectionsDir(
             target.name,
             api.id,
