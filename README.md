@@ -31,17 +31,16 @@ You need to put your collection files under the following structure.
 .
 `-- {directory_to_put_testing_files}                    # Any directory name to put your postman files
     `-- {target_site}                                   # Any identifier for your testing target
-       |-- apis
-       |   `-- {id}                                     # Any identifier for your target API (api_id, API name, etc)
-       |       `-- collections                          # Postman collections
-       |           |-- {category_name_1}                # Any category name for your collections files (unit, integration, etc)
-       |           |   `-- *.postman_collection.json
-       |           `-- {category_name_2}                # (You can make multiple categories if you need)
-       |               `-- *.postman_collection.json
-       |-- environments                                 # Postman environments
-       |   `-- *.postman_environment.json
-       `-- fixtures                                     # Fixture files for test scripts
-           `-- *.*
+        |-- collections                                 # Postman collections
+        |   `-- {id}                                    # Any identifier for your target API (api_id, API name, etc)   
+        |       |-- {category_name_1}                   # Any category name for your collections files (unit, integration, etc)
+        |       |   `-- *.postman_collection.json
+        |       `-- {category_name_2}                   # (You can make multiple categories if you need)
+        |           `-- *.postman_collection.json
+        |-- environments                                # Postman environments
+        |   `-- *.postman_environment.json
+        `-- fixtures                                    # Fixture files for test scripts
+            `-- *.*
 ```
 
 For example:
@@ -49,18 +48,17 @@ For example:
 .
 `-- tests
     `-- kuroco-test
-       |-- apis
-       |   `-- 1
-       |       `-- collections
-       |           |-- unit
-       |           |   `-- Kuroco-test-unit.postman_collection.json
-       |           `-- integration
-       |               |-- Kuroco-test-specs-scenario.postman_collection.json
-       |               `-- Kuroco-test-specs-pattern.postman_collection.json
-       |-- environments
-       |   `-- Kuroco-test.postman_environment.json
-       `-- fixtures
-           `-- diverta.png
+        |-- collections
+        |   `-- 1
+        |       |-- unit
+        |       |   `-- Kuroco-test-unit.postman_collection.json
+        |       `-- integration
+        |           |-- Kuroco-test-specs-scenario.postman_collection.json
+        |           `-- Kuroco-test-specs-pattern.postman_collection.json
+        |-- environments
+        |   `-- Kuroco-test.postman_environment.json
+        `-- fixtures
+           　`-- diverta.png
 ```
 
 ### kuroco-newman.config.json
@@ -86,10 +84,10 @@ Second, please configure the file as below.
     {
       "name": "target_site",
       "environment": "file_name.postman_environment.json",
-      "apis": [
+      "collections": [
         {
           "id": "api_id",
-          "collections": {
+          "files": {
             "category_name": "*.json"
           }
         }
