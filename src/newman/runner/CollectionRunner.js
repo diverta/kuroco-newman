@@ -66,15 +66,15 @@ class CollectionRunner {
 
     const runCollectionPromises = [];
     this.newmanConfig.target.forEach((site) => {
-      site.apis.forEach((api) => {
-        Object.keys(api.collections).forEach((testType) => {
+      site.collections.forEach((api) => {
+        Object.keys(api.files).forEach((testType) => {
           const environmentFile = `${this.files.getEnvironmentsDir(
             site.name
           )}/${site.environment}`;
 
           const collectionFilesPattern = path.join(
             this.files.getCollectionsDir(site.name, api.id, testType),
-            api.collections[testType]
+            api.files[testType]
           );
           const collectionFiles = glob.sync(collectionFilesPattern);
 

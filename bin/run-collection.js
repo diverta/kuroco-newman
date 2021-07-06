@@ -27,10 +27,12 @@ module.exports = (collection, environment) => {
   }
   // site name & api id & type fetch
   const collectionPathDirs = collectionPath.split(path.sep).reverse();
+  console.log(collectionPathDirs);
   const fileName = collectionPathDirs[0];
   const testType = collectionPathDirs[1];
-  const apiId = collectionPathDirs[3];
-  const targetSite = collectionPathDirs[5];
+  const apiId = collectionPathDirs[2];
+  const targetSite = collectionPathDirs[4];
+  console.log({ targetSite, apiId, testType, fileName });
   // validate
   if (
     !fileName ||
@@ -41,7 +43,7 @@ module.exports = (collection, environment) => {
       path.resolve(
         `${process.cwd()}/${
           newmanConfig.baseDir
-        }/${targetSite}/apis/${apiId}/collections/${testType}/${fileName}`
+        }/${targetSite}/collections/${apiId}/${testType}/${fileName}`
       )
   ) {
     console.error(`Collection file is not placed collectly.`);
