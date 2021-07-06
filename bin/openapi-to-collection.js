@@ -34,12 +34,12 @@ const question = () =>
   });
 
 module.exports = (openapiFile, collectionFile, output = null) => {
-  if (hasError || !openapiFile || !collectionFile) {
+  if (!openapiFile || !collectionFile) {
     console.error(`Please specify openapi & collection file`);
     process.exit(1);
   }
   if (output == null) {
-    output = collection;
+    output = collectionFile;
   }
 
   const openapiData = fs.readFileSync(openapiFile, { encoding: 'utf8' });
@@ -86,7 +86,7 @@ module.exports = (openapiFile, collectionFile, output = null) => {
     });
 
     // updated collection file
-    if (outputFile) {
+    if (output) {
       let result = JSON.parse(postmanCollectionJson);
       const deleteRequest = (obj, target) => {
         if (obj.hasOwnProperty('item')) {
@@ -119,7 +119,7 @@ module.exports = (openapiFile, collectionFile, output = null) => {
       }
 
       // write
-      fs.writeFileSync(outputFile, JSON.stringify(result, null, '\t'));
+      fs.writeFileSync(output, JSON.stringify(result, null, '\t'));
       console.log('Output succeeded.');
     }
     process.exit(0);
