@@ -79,4 +79,12 @@ program
     generateIndex();
   });
 
+program
+  .command('init')
+  .description(`create kuroco-newman.config.json`)
+  .action((options) => {
+    const kurocoInit = require('./kuroco-init.js');
+    kurocoInit();
+  });
+
 program.parse();
