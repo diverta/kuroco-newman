@@ -2,8 +2,8 @@
 
 'use strict';
 
-const { NewmanConfig } = require('../src/newman/config');
-const { ReportGenerator } = require('../src/newman/reports');
+const { NewmanConfig } = require('../../src/newman/config');
+const { ReportGenerator } = require('../../src/newman/reports');
 
 module.exports = () => {
   const newmanConfig = NewmanConfig.load();

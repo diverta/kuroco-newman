@@ -7,8 +7,8 @@ const path = require('path');
 const fs = require('fs');
 
 module.exports = (collection, environment = '') => {
-  const { CollectionRunner } = require('../src/newman/runner');
-  const { NewmanConfig } = require('../src/newman/config');
+  const { CollectionRunner } = require('../../src/newman/runner');
+  const { NewmanConfig } = require('../../src/newman/config');
 
   if (!collection) {
     console.error(`Please specify collection file.`);
