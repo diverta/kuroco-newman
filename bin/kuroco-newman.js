@@ -10,24 +10,13 @@ program
   .description(`run collections`)
   .option(
     '-e, --environment, --env <environment-file>',
-    `specify environment file`
+    `specify environment file`,
+    ''
   )
   .option('-c, --collection <collection>', `specify collection file`)
   .action((options) => {
-    if (
-      options.hasOwnProperty('collection') ||
-      options.hasOwnProperty('environment')
-    ) {
+    if (options.hasOwnProperty('collection')) {
       // run specified collection
-      if (
-        !options.hasOwnProperty('collection') ||
-        !options.hasOwnProperty('environment')
-      ) {
-        console.error(
-          `If specify collection or environment, both are required.`
-        );
-        process.exit(1);
-      }
       const runCollection = require('./run-collection.js');
       runCollection(options.collection, options.environment);
     } else {

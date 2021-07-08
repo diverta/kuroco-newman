@@ -6,12 +6,12 @@ const glob = require('glob');
 const path = require('path');
 const fs = require('fs');
 
-module.exports = (collection, environment) => {
+module.exports = (collection, environment = '') => {
   const { CollectionRunner } = require('../src/newman/runner');
   const { NewmanConfig } = require('../src/newman/config');
 
-  if (!collection || !environment) {
-    console.error(`Please specify collection & environment files.`);
+  if (!collection) {
+    console.error(`Please specify collection file.`);
     process.exit(1);
   }
 
@@ -27,12 +27,10 @@ module.exports = (collection, environment) => {
   }
   // site name & api id & type fetch
   const collectionPathDirs = collectionPath.split(path.sep).reverse();
-  console.log(collectionPathDirs);
   const fileName = collectionPathDirs[0];
   const testType = collectionPathDirs[1];
   const apiId = collectionPathDirs[2];
   const targetSite = collectionPathDirs[4];
-  console.log({ targetSite, apiId, testType, fileName });
   // validate
   if (
     !fileName ||
@@ -51,8 +49,8 @@ module.exports = (collection, environment) => {
   }
 
   // environment file path
-  const environmentPath = path.resolve(environment);
-  if (!fs.existsSync(environmentPath)) {
+  const environmentPath = environment ? path.resolve(environment) : '';
+  if (environmentPath && !fs.existsSync(environmentPath)) {
     console.error(`Environment file does not exist.`);
     process.exit(1);
   }

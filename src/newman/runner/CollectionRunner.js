@@ -68,9 +68,9 @@ class CollectionRunner {
     this.newmanConfig.target.forEach((site) => {
       site.collections.forEach((api) => {
         Object.keys(api.files).forEach((testType) => {
-          const environmentFile = `${this.files.getEnvironmentsDir(
-            site.name
-          )}/${site.environment}`;
+          const environmentFile = site.environment
+            ? `${this.files.getEnvironmentsDir(site.name)}/${site.environment}`
+            : '';
 
           const collectionFilesPattern = path.join(
             this.files.getCollectionsDir(site.name, api.id, testType),
