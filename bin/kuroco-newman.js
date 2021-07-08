@@ -17,11 +17,11 @@ program
   .action((options) => {
     if (options.hasOwnProperty('collection')) {
       // run specified collection
-      const runCollection = require('./run-collection.js');
+      const runCollection = require('./commands/run.js');
       runCollection(options.collection, options.environment);
     } else {
       // run all collections
-      const runAll = require('./run-all-collections.js');
+      const runAll = require('./commands/run-all.js');
       runAll();
     }
   });
@@ -35,7 +35,7 @@ program
   .requiredOption('-k, --key <sdk_key>', `SDK key`)
   .option('-o, --output <output>', `openapi.json output path`)
   .action((target, options) => {
-    const fetchOpenapi = require('./fetch-openapi.js');
+    const fetchOpenapi = require('./commands/openapi-fetch.js');
     if (options.hasOwnProperty('output')) {
       fetchOpenapi(target, options.id, options.key, options.output);
     } else {
@@ -51,7 +51,7 @@ program
   .argument('<collection>', `collection.json`)
   .option('-o, --output <output>', `collection output path`)
   .action((openapi, collection, options) => {
-    const openapiToCollection = require('./openapi-to-collection.js');
+    const openapiToCollection = require('./commands/openapi-to-collection.js');
     if (options.hasOwnProperty('output')) {
       openapiToCollection(openapi, collection, options.output);
     } else {
@@ -64,7 +64,7 @@ program
   .command('report-generate-index')
   .description('generate index')
   .action((options) => {
-    const generateIndex = require('./generate-reports-index.js');
+    const generateIndex = require('./commands/report-generate-index.js');
     generateIndex();
   });
 
@@ -72,7 +72,7 @@ program
   .command('init')
   .description(`create kuroco-newman.config.json`)
   .action((options) => {
-    const kurocoInit = require('./kuroco-init.js');
+    const kurocoInit = require('./commands/init.js');
     kurocoInit();
   });
 

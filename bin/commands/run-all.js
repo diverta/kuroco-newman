@@ -2,8 +2,8 @@
 
 'use strict';
 
-const { CollectionRunner } = require('../src/newman/runner');
-const { NewmanConfig } = require('../src/newman/config');
+const { CollectionRunner } = require('../../src/newman/runner');
+const { NewmanConfig } = require('../../src/newman/config');
 
 module.exports = () => {
   const newmanConfig = NewmanConfig.load();
