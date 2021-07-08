@@ -29,6 +29,18 @@ const question = (text = '', defaultValue = null) =>
 
 module.exports = () => {
   (async () => {
+    if (fs.existsSync(configFile)) {
+      const response = await question(
+        `${configFile} already exists.
+Do you want to regenerate?: (yes) `,
+        'yes'
+      );
+      if (!/y(es)?/i.test(response)) {
+        console.log();
+        process.exit(0);
+      }
+    }
+
     const baseDir = await question(`tests base directory: (tests) `, 'tests');
     const reportDir = await question(
       `report output directory: (reports) `,
@@ -44,13 +56,42 @@ module.exports = () => {
       target: [],
     };
 
+    while (true) {
+      const targetSite = await question(
+        `target site name: (empty to finish) `,
+        ''
+      );
+      if (targetSite === '') break;
+      config.target.push({
+        name: targetSite,
+        environment: '',
+        collections: [],
+      });
+      console.log(`Added target '${targetSite}'`);
+    }
+
     // output config
-    await fs.promises.writeFile(configFile, JSON.stringify(config, null, 2));
-    console.log(`Output config file to ${configFile}`);
+    const configJson = JSON.stringify(config, null, 2);
+    console.log(configJson);
+
+    await fs.promises.writeFile(configFile, configJson);
+    console.log(`
+Output config file to ${configFile}`);
 
     // make directories
     await fs.promises.mkdir(baseDir, { recursive: true });
     await fs.promises.mkdir(reportDir, { recursive: true });
+    await Promise.allSettled(
+      config.target.map((target) =>
+        Promise.allSettled(
+          [
+            `${baseDir}/${target.name}/collections`,
+            `${baseDir}/${target.name}/environments`,
+            `${baseDir}/${target.name}/fixtures`,
+          ].map((dir) => fs.promises.mkdir(dir, { recursive: true }))
+        )
+      )
+    );
 
     process.exit(0);
   })();
