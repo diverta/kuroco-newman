@@ -51,7 +51,12 @@ Do you want to regenerate?: (yes) `,
       baseDir: baseDir,
       report: {
         outputDir: reportDir,
-        templates: {},
+        options: {
+          index: {
+            template: '',
+          },
+          htmlextra: {},
+        },
       },
       target: [],
     };

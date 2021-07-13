@@ -13,38 +13,41 @@ class ReportGenerator {
       summaryDir: `${baseDir}/summary`,
     };
 
-    this.templatesPath = this.getTemplatePathConfig(newmanConfig);
+    this.reportIndexConfig = this.getReportIndexConfig(newmanConfig);
     this.mapping = this.getNewmanConfigTargetMapping(newmanConfig);
 
     this.files = new Files(newmanConfig);
   }
 
-  getTemplatePathConfig(newmanConfig) {
-    if (typeof newmanConfig.report.templates !== 'object') {
+  getReportIndexConfig(newmanConfig) {
+    if (typeof newmanConfig.report.options.index !== 'object') {
       return {};
     }
-    const templateConfig = Object.keys(newmanConfig.report.templates).reduce(
+    const indexConfig = Object.keys(newmanConfig.report.options.index).reduce(
       (conf, key) => {
         return {
-          conf,
+          ...conf,
           ...{
-            [key]: path.resolve(
-              process.cwd(),
-              newmanConfig.report.templates[key]
-            ),
+            [key]:
+              key === 'template'
+                ? path.resolve(
+                    process.cwd(),
+                    newmanConfig.report.options.index[key]
+                  )
+                : newmanConfig.report.options.index[key],
           },
         };
       },
       {}
     );
     // Use default template if custom template is not configured
-    if (!templateConfig.index) {
-      templateConfig.index = path.resolve(
+    if (!indexConfig.template) {
+      indexConfig.template = path.resolve(
         __dirname,
         'templates/reports-top.hbs'
       );
     }
-    return templateConfig;
+    return indexConfig;
   }
 
   getNewmanConfigTargetMapping(newmanConfig) {
@@ -146,7 +149,7 @@ class ReportGenerator {
     }
 
     const template = handlebars.compile(
-      fs.readFileSync(this.templatesPath.index, 'utf-8').toString()
+      fs.readFileSync(this.reportIndexConfig.template, 'utf-8').toString()
     );
 
     const output = template(props);
