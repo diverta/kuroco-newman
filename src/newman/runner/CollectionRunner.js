@@ -14,8 +14,27 @@ class CollectionRunner {
       this.newmanConfig.baseDir
     );
 
+    this.htmlextraConfig = this.getHtmlextraConfig(newmanConfig);
     this.files = new Files(newmanConfig);
     this.reportGenerator = new ReportGenerator(newmanConfig);
+  }
+
+  getHtmlextraConfig(newmanConfig) {
+    if (typeof newmanConfig.report.options.htmlextra !== 'object') {
+      return {};
+    }
+    // Ignore 'export' option
+    const htmlextraConfig = Object.keys(
+      newmanConfig.report.options.htmlextra
+    ).reduce((conf, key) => {
+      return {
+        ...conf,
+        ...(key === 'export'
+          ? {}
+          : { [key]: newmanConfig.report.options.htmlextra[key] }),
+      };
+    }, {});
+    return htmlextraConfig;
   }
 
   run(
@@ -38,7 +57,10 @@ class CollectionRunner {
           reporters: ['cli', 'htmlextra'],
           reporter: {
             htmlextra: {
-              export: `${reportRootPath}/${targetName}/${apiId}/${testType}/${collectionName}.html`,
+              ...this.htmlextraConfig,
+              ...{
+                export: `${reportRootPath}/${targetName}/${apiId}/${testType}/${collectionName}.html`,
+              },
             },
           },
           workingDir: `${this.absoluteBaseDir}/${targetSite}`,
