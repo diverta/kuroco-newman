@@ -2,6 +2,7 @@ const glob = require('glob');
 const fs = require('fs');
 const handlebars = require('handlebars');
 const path = require('path');
+const moment = require('moment-timezone');
 
 const Files = require('../runner/Files.js');
 
@@ -47,6 +48,15 @@ class ReportGenerator {
         'templates/reports-top.hbs'
       );
     }
+    if (!indexConfig.title) {
+      indexConfig.title = 'Kuroco Newman Test Reports';
+    }
+    if (!indexConfig.browserTitle) {
+      indexConfig.browserTitle = 'Kuroco Newman Test Reports';
+    }
+    if (!indexConfig.timezone) {
+      indexConfig.timezone = 'Asia/Tokyo';
+    }
     return indexConfig;
   }
 
@@ -89,20 +99,9 @@ class ReportGenerator {
   }
 
   generateIndexHtml() {
-    // const datetime = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-    const date = new Date(Date.now());
-    // UTC->JST convert (Date with JST doesn't work on GitHub Actions)
-    date.setUTCHours(date.getUTCHours() + 9);
-    const datetime = date.toLocaleString('ja-JP', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      timeZone: 'UTC',
-    });
+    const datetime = moment()
+      .tz(this.reportIndexConfig.timezone)
+      .format('YYYY-MM-DD HH:mm:ss z');
 
     const reports = {};
 
@@ -139,7 +138,12 @@ class ReportGenerator {
         };
       });
 
-    const props = { reports: reports, updatedAt: datetime };
+    const props = {
+      reports: reports,
+      updatedAt: datetime,
+      title: this.reportIndexConfig.title,
+      browserTitle: this.reportIndexConfig.browserTitle,
+    };
 
     // GitHub Actions info
     if (process.env.GITHUB_ACTIONS) {
