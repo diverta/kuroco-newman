@@ -1,6 +1,6 @@
 # kuroco-newman
 
-kuroco-newman is an internal npm package to manage/run Postman collections at any repository easily.  
+kuroco-newman is an internal-use npm package to manage/run Postman collections at any repository easily.
 
 ## Installation
 ```sh
@@ -35,7 +35,7 @@ npx kuroco-newman run -e path/to/your/environment_file -f path/to/your/collectio
 
 
 ## Reference
-### Directory/file structure
+### Directory structure
 - `kuroco-newman.config.json` must exist in the root of your repository.
 - Postman collection files must always be put under the specific directory structure.
 
