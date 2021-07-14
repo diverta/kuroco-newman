@@ -13,12 +13,13 @@ program
     `specify environment file`,
     ''
   )
+  .option('-g --globals <globals-file>', `specify globals file`, '')
   .option('-c, --collection <collection>', `specify collection file`)
   .action((options) => {
     if (options.hasOwnProperty('collection')) {
       // run specified collection
       const runCollection = require('./commands/run.js');
-      runCollection(options.collection, options.environment);
+      runCollection(options.collection, options.environment, options.globals);
     } else {
       // run all collections
       const runAll = require('./commands/run-all.js');

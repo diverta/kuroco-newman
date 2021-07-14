@@ -40,6 +40,7 @@ class CollectionRunner {
   run(
     collectionFile,
     environmentFile,
+    globalsFile,
     targetSite,
     apiId,
     testType,
@@ -54,6 +55,7 @@ class CollectionRunner {
         {
           collection: collectionFile,
           environment: environmentFile,
+          globals: globalsFile,
           reporters: ['cli', 'htmlextra'],
           reporter: {
             htmlextra: {
@@ -93,6 +95,9 @@ class CollectionRunner {
           const environmentFile = site.environment
             ? `${this.files.getEnvironmentsDir(site.name)}/${site.environment}`
             : '';
+          const globalsFile = site.globals
+            ? `${this.files.getEnvironmentsDir(site.name)}/${site.globals}`
+            : '';
 
           const collectionFilesPattern = path.join(
             this.files.getCollectionsDir(site.name, api.id, testType),
@@ -105,6 +110,7 @@ class CollectionRunner {
               this.run(
                 collectionFile,
                 environmentFile,
+                globalsFile,
                 site.name,
                 api.id,
                 testType,

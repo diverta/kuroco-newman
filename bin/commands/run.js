@@ -6,7 +6,7 @@ const glob = require('glob');
 const path = require('path');
 const fs = require('fs');
 
-module.exports = (collection, environment = '') => {
+module.exports = (collection, environment = '', globals = '') => {
   const { CollectionRunner } = require('../../src/newman/runner');
   const { NewmanConfig } = require('../../src/newman/config');
 
@@ -55,8 +55,22 @@ module.exports = (collection, environment = '') => {
     process.exit(1);
   }
 
+  // globals file path
+  const globalsPath = globals ? path.resolve(globals) : '';
+  if (globalsPath && !fs.existsSync(globalsPath)) {
+    console.error(`Globals file does not exist.`);
+    process.exit(1);
+  }
+
   runner
-    .run(collectionPath, environmentPath, targetSite, apiId, testType)
+    .run(
+      collectionPath,
+      environmentPath,
+      globalsPath,
+      targetSite,
+      apiId,
+      testType
+    )
     .catch((err) => {
       process.exit(1);
     });

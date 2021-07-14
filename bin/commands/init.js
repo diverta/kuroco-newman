@@ -70,6 +70,7 @@ Do you want to regenerate?: (yes) `,
       config.target.push({
         name: targetSite,
         environment: '',
+        globals: '',
         collections: [],
       });
       console.log(`Added target '${targetSite}'`);
