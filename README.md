@@ -4,7 +4,7 @@ kuroco-newman is an internal-use npm package to manage/run Postman collections a
 
 ## Installation
 ```sh
-npm i github:diverta/kuroco-newman
+npm i --save-dev github:diverta/kuroco-newman
 ```
 
 ## Prerequisites
