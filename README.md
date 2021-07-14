@@ -12,23 +12,46 @@ The purpose is that everyone can create an environment for E2E testing easily by
 3. Configure GitHub Actions workflow  
   https://github.com/diverta/kuroco_e2e_test/blob/main/.github/workflows/newman.yaml
 
-## Install
+## Installation
 ```sh
 npm i github:diverta/kuroco-newman
 ```
 
 ## Prerequisites
-You need to follow the steps below at least to use kuroco-newman client.  
-(These steps will be automated in the near future by implementing `kuroco-newman init`)
+You need to follow the steps below at least to use kuroco-newman package.  
 
 1. Put Postman collection files under specific directory structure
 2. Create `kuroco-newman.config.json`
 
-### Directory structure
-You need to put your collection files under the following structure.
+## kuroco-newman cli
+
+You can use `kuroco-newman` cli to initialize your repository and run/manage your collection files.
+
+### Initialization
 
 ```
-.
+kuroco-newman init
+```
+
+### Run Postman collections
+
+```sh
+# Run all Postman collections configured in kuroco-newman.config.json
+npx kuroco-newman run
+
+# Run only specific Postman collection
+npx kuroco-newman run -e path/to/your/environment_file -f path/to/your/collection_file
+```
+
+
+## Reference
+### Directory/file structure
+- `kuroco-newman.config.json` must exist in the root of your repository.
+- Postman collection files must always be put under the specific directory structure.
+
+```
+/
+|-- kuroco-newman.config.json
 `-- {directory_to_put_testing_files}                    # Any directory name to put your postman files
     `-- {target_site}                                   # Any identifier for your testing target
         |-- collections                                 # Postman collections
@@ -43,9 +66,12 @@ You need to put your collection files under the following structure.
             `-- *.*
 ```
 
-For example:
+<details>
+<summary>Example</summary>
+
 ```
-.
+/
+|-- kuroco-newman.config.json
 `-- tests
     `-- kuroco-test
         |-- collections
@@ -60,24 +86,18 @@ For example:
         `-- fixtures
            　`-- diverta.png
 ```
+</details>
 
 ### kuroco-newman.config.json
 
-First, please create a file on the root of your repository.
-
-```sh
-cd path/to/your/repository/root
-touch kuroco-newman.config.json
-```
-
-Second, please configure the file as below.
 ```js
 {
   "baseDir": "path/to/base/directory",
   "report": {
     "outputDir": "path/to/output/report/files",
-    "templates": {
-      // "index": "path/to/your/custom/template.hbs"
+    "options": {
+      "index": {},
+      "htmlextra": {}
     }
   },
   "target": [
@@ -95,14 +115,4 @@ Second, please configure the file as below.
     }
   ]
 }
-```
-
-## Usage
-
-```sh
-# Run all Postman collections configured in kuroco-newman.config.json
-npx kuroco-newman run
-
-# Run only specific Postman collection
-npx kuroco-newman run -e path/to/your/environment_file -f path/to/your/collection_file
 ```
