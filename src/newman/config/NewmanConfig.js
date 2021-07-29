@@ -30,6 +30,7 @@ class NewmanConfig {
       return ['Newman configuration should be exported as object'];
     }
 
+    // baseDir
     if (typeof newmanConfig.baseDir !== 'string') {
       return [
         "String 'baseDir' should be set on the top level of configuration object",
@@ -38,6 +39,34 @@ class NewmanConfig {
     if (!fs.existsSync(newmanConfig.baseDir)) {
       return [`Base directory not found: ${newmanConfig.baseDir}`];
     }
+
+    // report
+    if (typeof newmanConfig.report !== 'object') {
+      return [
+        "Object 'report' should be set on the top level of configuration object",
+      ];
+    }
+    if (
+      typeof newmanConfig.report.outputDir !== 'string' ||
+      newmanConfig.report.outputDir === ''
+    ) {
+      return ["'report.outputDir' should be a string and non-empty"];
+    }
+    if (typeof newmanConfig.report.options === 'object') {
+      if (typeof newmanConfig.report.options.index === 'object') {
+        if (newmanConfig.report.options.index.hasOwnProperty('template')) {
+          if (
+            typeof newmanConfig.report.options.index.template !== 'string' ||
+            newmanConfig.report.options.index.template === '' ||
+            !fs.existsSync(newmanConfig.report.options.index.template)
+          ) {
+            return ["'index' template file not found"];
+          }
+        }
+      }
+    }
+
+    // target
     if (!Array.isArray(newmanConfig.target)) {
       return [
         "Array 'target' should be set on the top level of configuration object",
