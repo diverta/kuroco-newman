@@ -52,9 +52,7 @@ Do you want to regenerate?: (yes) `,
       report: {
         outputDir: reportDir,
         options: {
-          index: {
-            template: '',
-          },
+          index: {},
           htmlextra: {},
         },
       },
