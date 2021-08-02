@@ -12,9 +12,7 @@ npm install --save-dev github:diverta/kuroco-newman
 npx kuroco-newman init
 ```
 
-<!--
-    initしてる動画を載せる
--->
+https://diverta.gyazo.com/0fff117cedb27ba6d52a04eeb2c1f8c3
 
 - *tests base directory* と *report output directory* はほとんどの場合デフォルトのままで問題なし
 - *target site name* にはサイト名を指定すると良い
@@ -46,9 +44,13 @@ Postmanのワークスペースを作成します。ワークスペースはテ�
 ### openapi.jsonのインポート
 Postmanで [Import] -> [File] を選び、インストール時に取得したopenapi.jsonを選択してください。
 
-*Generate collection from imported APIs* をチェックすることを推奨します。
+*Generate collection from imported APIs* をチェックすると、インポート時に各エンドポイントに対するリクエストを含むコレクションが自動で生成されるようになります。チェックを外すと、コレクションを全て手動で作成する必要が出てくるため、チェックしておくことを推奨します。
 https://diverta.gyazo.com/7f055ad7b9ff2b1d617806f585c8bfc0
 <!-- チェックしないとどうなるんだっけ？ 理由も記載しておきたい -->
+<!--
+    チェックしないとコレクションが自動生成されないだけですが、どちらの方がいいんでしょうかね？
+    自動生成されたコレクションは単体テストとしてほぼそのまま使うのが主な用途だと思いますが、それが必要ない場合には一から作った方が楽かもしれません
+-->
 
 インポートが完了すると、以下のようなコレクションファイルが生成されます。  
 https://diverta.gyazo.com/8952b8018e66fe3893b319eb5648a9e0
@@ -56,6 +58,10 @@ https://diverta.gyazo.com/8952b8018e66fe3893b319eb5648a9e0
 インポート直後のコレクションには、ダミーの初期値が設定されているため、不要なものを削除する必要があります。
 <!--
     編集する必要のある箇所の名前と、画像を載せる
+-->
+<!-- 
+    ダミーの初期値って何でしたっけ？
+    削除する必要があるものってありました？
 -->
 
 ### テストコードの作成
@@ -72,6 +78,105 @@ https://diverta.gyazo.com/8952b8018e66fe3893b319eb5648a9e0
 <!--
     Pre-requestスクリプトのサンプルを載せる (とりあえずkuroco_e2e_testのglobals.kurocoに設定しているものでOK、後でもうちょっとシンプルにする)
 -->
+- 例: Pre-requestスクリプト
+    ```js
+    postman.setGlobalVariable('kuroco', () => ({
+        endpoint: {
+            login: '/rcms-api/1/auth/login',
+            token: '/rcms-api/1/auth/token',
+            memberInsert: '/rcms-api/1/members/insert'
+        },
+        getBaseUrl() {
+            const collectionBaseUrl = pm.collectionVariables.get('baseUrl');
+            const matches = collectionBaseUrl.match(/{{(.+)}}/);
+            if (matches.length > 0) {
+                return pm.environment.get(matches[1]);
+            }
+            return collectionBaseUrl;
+        },
+        getRequestDef(path, body, accessToken = '') {
+            return {
+                async: false,
+                url: `${this.getBaseUrl()}${path}`,
+                method: 'POST',
+                header: {
+                    'Content-Type': 'application/json',
+                    ...accessToken
+                        ? {'X-RCMS-API-ACCESS-TOKEN': accessToken}
+                        : {}
+                },
+                body: JSON.stringify(body)
+            }
+        },
+        hasValidToken(tokenGeneratedAt = 0) {
+            const hour = 1000 * 60 * 60;
+            return _.inRange(Date.now(), tokenGeneratedAt, tokenGeneratedAt + hour);
+        },
+        generateToken(memberAuth) {
+            const loginRequest = this.getRequestDef(this.endpoint.login, {
+                ...memberAuth,
+                "login_save": 0
+            });
+            const getTokenRequest = (grant_token) => this.getRequestDef(this.endpoint.token, {
+                grant_token
+            })
+
+            pm.sendRequest(loginRequest, (err, response) => {
+                const { grant_token } = response.json();
+                pm.sendRequest(getTokenRequest(grant_token), (err, response) => {
+                    console.log(response);
+                    const accessToken = response.json().access_token.value;
+                    const refreshToken = response.json().refresh_token.value;
+                    pm.collectionVariables.set('accessToken', accessToken);
+                    pm.collectionVariables.set('refreshToken', refreshToken);
+                    pm.collectionVariables.set('tokenGeneratedAt', Date.now());
+                    console.log(`genrated new tokens -> accessToken: ${accessToken}, refreshToken: ${refreshToken}`);
+                });
+            });
+        },
+        generateAnonymousToken() {
+            const getTokenRequest = () => this.getRequestDef(this.endpoint.token, {})
+
+            pm.sendRequest(getTokenRequest(), (err, response) => {
+                console.log(response);
+                const accessToken = response.json().access_token.value;
+                pm.collectionVariables.set('accessToken', accessToken);
+                pm.collectionVariables.set('refreshToken', null);
+                pm.collectionVariables.set('tokenGeneratedAt', Date.now());
+                console.log(`genrated new anonymous tokens -> accessToken: ${accessToken}`);
+            });
+        },
+        switchToTempMember() {
+            const timestamp = getTimeStamp();
+            const tempMemberAuth = {
+                email: `kuroco.e2e.${timestamp}@diverta.co.jp`,
+                password: 'test1234',
+            };
+            const memberInsertRequest = this.getRequestDef(
+                this.endpoint.memberInsert,
+                {
+                    email: tempMemberAuth.email,
+                    login_pwd: tempMemberAuth.password,
+                    name1: `E2E temporary user ${timestamp}`,
+                },
+                pm.collectionVariables.get('accessToken')
+            );
+            pm.sendRequest(memberInsertRequest, (err, response) => {
+                this.generateToken(tempMemberAuth);
+            });
+
+            function getTimeStamp() {
+                const date = new Date();
+                return Math.floor(date.getTime()/1000);
+            }
+        },
+        clearStoredToken() {
+            pm.collectionVariables.unset('accessToken');
+            pm.collectionVariables.unset('refreshToken');
+            pm.collectionVariables.unset('tokenGeneratedAt');
+        },
+    }));
+    ```
 
 #### リクエストのTestsスクリプトを編集する
 Testsタブを開き、各リクエスト毎のテストコードを記述していきます。
@@ -84,6 +189,25 @@ Testsタブを開き、各リクエスト毎のテストコードを記述して
     pm.test("Status code is 200", function () {
         pm.response.to.have.status(200);
     });
+    ```
+- 例: レスポンスボディの値に対するアサーション
+    ```js
+    pm.test("Topics details response", function () {
+        const jsonData = pm.response.json();
+        pm.expect(jsonData.details).to.exist;
+
+        pm.expect(jsonData.details.topics_id).to.be.a('number');
+        pm.expect(jsonData.details.ext_col_01).to.eql('Kuroco');
+    });
+    ```
+- 例: `pm.variables`を用いた複数リクエスト間での変数共有
+    ```js
+    const jsonData = pm.response.json();
+    pm.variables.set('INSERTED_TOPICS_ID', jsonData.id); // 値の保存
+    ```
+    ```js
+    const insertedTopicsId = pm.variables.get('INSERTED_TOPICS_ID'); // 値の読み込み
+    pm.expect(jsonData.details.topics_id).to.eql(insertedTopicsId);
     ```
     <!--
         追加で何個かよく使う記法のサンプルも載せたい
@@ -111,21 +235,27 @@ Testsタブを開き、各リクエスト毎のテストコードを記述して
 `-- fixtures
 ```
 
-kuroco-newman.config.json の `target` を編集する
-各種ディレクトリ・ファイルの名前と合わせる
+kuroco-newman.config.json の `target` を編集します。この時、各種ディレクトリやファイルの名前と合わせるようにします。
 
 #### 例
-<!--
-    対応するディレクトリのツリーも出しておきたい (比較できるとわかりやすいので)
--->
+```
+kuroco-newman-sample
+|-- collections
+|   `-- 5
+|       `-- unit
+|           `- Kuroco-test.postman_collection.json
+|-- environments
+`-- fixtures
+```
+上のようなディレクトリ構造の場合、kuroco-newman.config.jsonを以下のように編集します。
 ```jsonc
 {
     "name": "kuroco-newman-sample", 
     "collections": [
         {
-            "id": "1", // "{api_id}"
+            "id": "5", // "{api_id}"
             "files": {
-                "openapi": "*.json" // "{test_type}": "{glob pattern}"
+                "unit": "*.json" // "{test_type}": "{glob pattern}"
             }
         }
     ]
@@ -152,6 +282,48 @@ https://diverta.gyazo.com/bc6206309b15a477c5fea0be14e015c8
     動くもののサンプルyamlを貼っておく
     レポートのデプロイについては省いて良い (どこにデプロイするかの選定は場合によって変わるため)
 -->
+```yaml
+name: Newman e2e testing
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'tests/newman/**'
+      - '!tests/newman/README.md'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'tests/newman/**'
+      - '!tests/newman/README.md'
+  schedule:
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+
+jobs:
+  newman:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Locally
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+      - name: Set PAT (Personal Access Token)
+        run: git config --global url."https://${{ secrets.PAT }}@github.com/".insteadOf ssh://git@github.com/
+      - name: Install Dependencies
+        run: npm install
+      - name: Run All Collections
+        run: "npm run test:newman:all"
+      - name: Upload test report
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: reports
+          path: reports
+
+```
 
 ### GitHubリモートリポジトリにpush
 
