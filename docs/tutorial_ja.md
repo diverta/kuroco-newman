@@ -55,14 +55,12 @@ https://diverta.gyazo.com/7f055ad7b9ff2b1d617806f585c8bfc0
 インポートが完了すると、以下のようなコレクションファイルが生成されます。  
 https://diverta.gyazo.com/8952b8018e66fe3893b319eb5648a9e0
 
-インポート直後のコレクションには、ダミーの初期値が設定されているため、不要なものを削除する必要があります。
-<!--
-    編集する必要のある箇所の名前と、画像を載せる
--->
-<!-- 
-    ダミーの初期値って何でしたっけ？
-    削除する必要があるものってありました？
--->
+インポート直後のコレクションでは、各リクエストのパラメータにダミーの初期値が設定されています。
+https://diverta.gyazo.com/353aaaf45f0c68bcedcd22d6a17b6b08
+
+不要なパラメータは削除あるいは無効化して、必要なパラメータは適切な値に書き換える必要があります。
+https://diverta.gyazo.com/4db17b0f438b8b5b0e217ff75ff0156e
+
 
 ### テストコードの作成
 コレクション内にテストコードを記述します。
@@ -75,9 +73,6 @@ https://diverta.gyazo.com/8952b8018e66fe3893b319eb5648a9e0
 
 [Pre-request script](https://learning.postman.com/docs/writing-scripts/pre-request-scripts/)を利用すると、テストコードの前処理を定義することができます。 
 
-<!--
-    Pre-requestスクリプトのサンプルを載せる (とりあえずkuroco_e2e_testのglobals.kurocoに設定しているものでOK、後でもうちょっとシンプルにする)
--->
 - 例: Pre-requestスクリプト
     ```js
     postman.setGlobalVariable('kuroco', () => ({
@@ -200,7 +195,7 @@ Testsタブを開き、各リクエスト毎のテストコードを記述して
         pm.expect(jsonData.details.ext_col_01).to.eql('Kuroco');
     });
     ```
-- 例: `pm.variables`を用いた複数リクエスト間での変数共有
+- 例: `pm.variables`を用いた複数リクエスト間での[変数共有](https://learning.postman.com/docs/sending-requests/variables/)
     ```js
     const jsonData = pm.response.json();
     pm.variables.set('INSERTED_TOPICS_ID', jsonData.id); // 値の保存
@@ -209,11 +204,7 @@ Testsタブを開き、各リクエスト毎のテストコードを記述して
     const insertedTopicsId = pm.variables.get('INSERTED_TOPICS_ID'); // 値の読み込み
     pm.expect(jsonData.details.topics_id).to.eql(insertedTopicsId);
     ```
-    <!--
-        追加で何個かよく使う記法のサンプルも載せたい
-        - レスポンスの値のアサーション
-        - pm.variablesを使ったコレクション間の変数共有
-    -->
+    
 
 ### テストコードの保存
 
@@ -278,10 +269,6 @@ https://diverta.gyazo.com/bc6206309b15a477c5fea0be14e015c8
 
 - PATの設定(publicリポジトリ化されたら不要かもしれない)
 - ワークフローの設定
-<!--
-    動くもののサンプルyamlを貼っておく
-    レポートのデプロイについては省いて良い (どこにデプロイするかの選定は場合によって変わるため)
--->
 ```yaml
 name: Newman e2e testing
 
@@ -337,9 +324,45 @@ jobs:
 2. 追加したコンテンツの取得 (`Topics::details`)
 3. 取得結果のアサーション
 
-<!--
-    もうちょっと手順の詳細を書く
--->
+#### フォルダの作成
+1つのシナリオはコレクション内の1つのフォルダに対応します。まずはフォルダを作成します。
+https://diverta.gyazo.com/bf8db63513bcbee00b46e8eed064ce8c
+
+必要に応じて、Pre-requestにAPIの認証を行うコードを追加します。
+https://diverta.gyazo.com/57f49e8486ae95b917a088f2063a4946
+
+#### リクエストの追加
+1. コンテンツの新規追加 (`Topics::insert`)
+
+    コンテンツを追加するリクエスト (`Topics::insert`) をコレクションに追加します。
+
+    レスポンスのidなどの値を他のリクエストで使うため、Testsスクリプトで`pm.variables`を用いて値を変数に保存します。
+    https://diverta.gyazo.com/a6e192518c304537bb4d53bba00f022c
+
+2. 追加したコンテンツの取得 (`Topics::details`)
+
+    追加したコンテンツを取得するリクエスト (`Topics::details`) を、コンテンツ追加リクエストの後ろに追加します。
+
+    先ほど保存した変数を利用して、リクエストのパラメータを構成します。
+    https://diverta.gyazo.com/91c16ba3b9f58d0db474745ffc75548e
+
+3. 取得結果のアサーション
+
+    コンテンツ取得リクエストのTestsスクリプトに、取得結果に対するアサーションを追加します。
+    - 例
+        ```js
+        pm.test("Response check", function () {
+            const jsonData = pm.response.json();
+            pm.expect(jsonData.details).to.exist;
+
+            pm.expect(jsonData.details.topics_id, "topics_id").to.eql(pm.variables.get("topics_id"));
+            pm.expect(jsonData.details.subject, "subject").to.eql("Insert Test");
+            pm.expect(jsonData.details.ext_col_01, "ext_col_01").to.eql("test");
+        });
+        ```
+
+#### 実行例
+https://diverta.gyazo.com/9e022bcc0587ba123bc8ebf9cf72ace6
 
 ### 共通ファイルの作成
 複数のコレクションを定義している場合は、各コレクション毎にCollection variablesやPre-requestを用意する必要がありますが、  
@@ -361,6 +384,13 @@ jobs:
     <!--
         - eval(pm.globals.kuroco)()でロードするサンプルコードを記載
     -->
+    globalsファイルに定義したスクリプトは、以下のようにして使用します。
+    ```js
+    const kuroco = eval(globals.kuroco)();
+    kuroco.generateToken({
+        ...
+    });
+    ```
 
 #### テスト管理ディレクトリの設定
 作成したファイルは、`kuroco-newman init`で自動生成された`environments`ディレクトリの配下に保存します。
