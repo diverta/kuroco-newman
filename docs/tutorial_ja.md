@@ -12,23 +12,29 @@ npm install --save-dev github:diverta/kuroco-newman
 npx kuroco-newman init
 ```
 
+画面の指示に従い、必要な項目を入力してください。
+
+| 入力項目 | デフォルト値 | 説明 |
+| :- | :- | :- |
+| tests base directory | `tests` | テストコードを管理するためのディレクトリを指定します。 |
+| report output directory | `reports` | テストレポートを出力するためのディレクトリを指定します。 |
+| target site name |  | テスト実行対象となるサイトの名称を指定します。 |
+
 https://diverta.gyazo.com/0fff117cedb27ba6d52a04eeb2c1f8c3
 
-- *tests base directory* と *report output directory* はほとんどの場合デフォルトのままで問題なし
-- *target site name* にはサイト名を指定すると良い
-- カレントディレクトリ内に以下のものが生成される
-    ```
-    .
-    |-- reports
-    |-- tests
-    |   `-- {site_name}
-    |       |-- collections
-    |       |-- environments
-    |       `-- fixtures
-    `-- kuroco-newman.config.json
-    ```
+入力完了後、カレントディレクトリ内に以下のファイル・フォルダが生成されます。
+```
+.
+|-- {report output directory}
+|-- {tests base directory}
+|   `-- {target site name}
+|       |-- collections
+|       |-- environments
+|       `-- fixtures
+`-- kuroco-newman.config.json
+```
 
-## Postmanでのテスト
+## Postmanコレクションファイルの作成
 
 ### ワークスペースの作成
 Postmanのワークスペースを作成します。ワークスペースはテスト対象のサイト毎に作成することを推奨します。
@@ -149,41 +155,27 @@ postman.setGlobalVariable('kuroco', () => ({
 
 </details>
 
-<!--
-TODO: 下記はTipsに移動する
+## APIテストコードの作成
 
-### openapi.jsonのインポート
-Postmanで [Import] -> [File] を選び、インストール時に取得したopenapi.jsonを選択してください。
+コレクションファイルの準備が完了したら、テストを作成していきます。  
+ここでは以下のシナリオをベースに、APIの結合テストを作成する方法を記載します。
 
-*Generate collection from imported APIs* をチェックすると、インポート時に各エンドポイントに対するリクエストを含むコレクションが自動で生成されるようになります。チェックを外すと、コレクションを全て手動で作成する必要が出てくるため、チェックしておくことを推奨します。
-https://diverta.gyazo.com/7f055ad7b9ff2b1d617806f585c8bfc0
+- シナリオ
+    1. コンテンツを追加する
+    2. 追加したコンテンツを取得し、(1)で送信した内容が正しく保存されているかをテストする
+- 手順
+    1. コンテンツの新規追加 (`Topics::insert`)
+    2. 追加したコンテンツの取得 (`Topics::details`)
+    3. 取得結果のアサーション
 
-インポートが完了すると、以下のようなコレクションファイルが生成されます。  
-https://diverta.gyazo.com/8952b8018e66fe3893b319eb5648a9e0
-
-インポート直後のコレクションでは、各リクエストのパラメータにダミーの初期値が設定されています。
-https://diverta.gyazo.com/353aaaf45f0c68bcedcd22d6a17b6b08
-
-不要なパラメータは削除あるいは無効化して、必要なパラメータは適切な値に書き換える必要があります。
-https://diverta.gyazo.com/4db17b0f438b8b5b0e217ff75ff0156e
--->
-
-### API結合テストの作成
-
-以下のシナリオをベースに、APIの結合テストを作成する方法を記載します。
-
-1. コンテンツの新規追加 (`Topics::insert`)
-2. 追加したコンテンツの取得 (`Topics::details`)
-3. 取得結果のアサーション
-
-#### フォルダの作成
-1つのシナリオはコレクション内の1つのフォルダに対応します。まずはフォルダを作成します。
+### フォルダの作成
+まずはリクエストを格納するためのフォルダを作成します。1つのシナリオはコレクション内の1つのフォルダに対応します。  
 https://diverta.gyazo.com/bf8db63513bcbee00b46e8eed064ce8c
 
 必要に応じて、Pre-requestにAPIの認証を行うコードを追加します。
 https://diverta.gyazo.com/57f49e8486ae95b917a088f2063a4946
 
-#### リクエストの追加
+### リクエストの追加
 1. コンテンツの新規追加 (`Topics::insert`)
 
     コンテンツを追加するリクエスト (`Topics::insert`を設定したエンドポイントへのリクエスト) をコレクションに追加します。
@@ -223,8 +215,7 @@ https://diverta.gyazo.com/57f49e8486ae95b917a088f2063a4946
 
 作成したPostmanのコレクションファイルを[エクスポート](https://learning.postman.com/docs/getting-started/importing-and-exporting-data/#exporting-collections)します。
 
-
-インポートしたファイルを、`kuroco-newman init`で自動生成されたディレクトリの下に配置します。  
+次に、インポートしたファイルを、`kuroco-newman init`で自動生成されたディレクトリの下に配置します。  
 
 
 ```
@@ -276,7 +267,7 @@ npx kuroco-newman run
 https://diverta.gyazo.com/bc6206309b15a477c5fea0be14e015c8
 
 ### GitHub Actionsの設定
-
+テストの自動実行を行わせるため、GitHub Actionsのワークフローを以下のように設定します。
 
 - PATの設定(publicリポジトリ化されたら不要かもしれない)
 - ワークフローの設定
@@ -316,9 +307,12 @@ jobs:
 
 ```
 
-### リモートリポジトリへの反映
+## リモートリポジトリへの反映
 
+全ての作業が完了したら、作成したファイルをGitHubにリモートリポジトリに反映します。  
 
+反映完了後はリポジトリのActions画面を確認し、テストが期待通りに実行されたかを確認してください。  
+テストレポートは、artifactsに保存されているzipファイルをダウンロード・展開することで確認できます。
 
 ## Tips
 
@@ -354,10 +348,10 @@ jobs:
     ```
 
 ### 共通ファイルの作成
-複数のコレクションを定義している場合は、各コレクション毎にCollection variablesやPre-requestを用意する必要がありますが、  
+複数のコレクションを管理する場合、各コレクション毎にCollection variablesやPre-requestを用意する必要がありますが、  
 コレクション間で完全に共通の定義を利用したい場合、これは非常に煩雑な作業となります。
 
-そのような場合は以下の方法で、共通利用可能な変数・スクリプトを定義することができます。
+そのような場合は以下の方法で、共通利用可能な変数・スクリプトを定義してください。
 
 #### Postmanファイルの作成
 - Environment  
@@ -407,11 +401,11 @@ jobs:
 // ]
 ```
 
-### opeapi.jsonからのコレクション生成
+### opeapi.jsonからコレクションを生成
 
 #### openapi.jsonの取得
 
-以下のコマンドを実行して、テスト対象のAPIの`openapi.json`ファイルを取得します。  
+以下のコマンドを実行して、テスト対象APIの`openapi.json`ファイルを取得します。  
 (改善事項があり、現在は下記を実行するだけでは取得できないので、手動で取得してください)
 
 ```sh
@@ -423,11 +417,6 @@ Postmanで [Import] -> [File] を選び、インストール時に取得したop
 
 *Generate collection from imported APIs* をチェックすると、インポート時に各エンドポイントに対するリクエストを含むコレクションが自動で生成されるようになります。チェックを外すと、コレクションを全て手動で作成する必要が出てくるため、チェックしておくことを推奨します。
 https://diverta.gyazo.com/7f055ad7b9ff2b1d617806f585c8bfc0
-<!-- チェックしないとどうなるんだっけ？ 理由も記載しておきたい -->
-<!--
-    チェックしないとコレクションが自動生成されないだけですが、どちらの方がいいんでしょうかね？
-    自動生成されたコレクションは単体テストとしてほぼそのまま使うのが主な用途だと思いますが、それが必要ない場合には一から作った方が楽かもしれません
--->
 
 インポートが完了すると、以下のようなコレクションファイルが生成されます。  
 https://diverta.gyazo.com/8952b8018e66fe3893b319eb5648a9e0
@@ -438,6 +427,3 @@ https://diverta.gyazo.com/353aaaf45f0c68bcedcd22d6a17b6b08
 不要なパラメータは削除あるいは無効化して、必要なパラメータは適切な値に書き換える必要があります。
 https://diverta.gyazo.com/4db17b0f438b8b5b0e217ff75ff0156e
 
-
-```mおとn
-```
