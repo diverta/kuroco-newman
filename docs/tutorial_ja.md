@@ -28,29 +28,135 @@ https://diverta.gyazo.com/0fff117cedb27ba6d52a04eeb2c1f8c3
     `-- kuroco-newman.config.json
     ```
 
-次に、テスト対象のAPIの`openapi.json`ファイルを取得します。  
+## Postmanでのテスト
 
-```sh
-kuroco-newman openapi-fetch --id {api_id} --key {sdk_key}
-```
-<!--
-    cliを少し改善したいので、詳細は後で書くことにします
--->
-
-## Postmanファイルの作成
 ### ワークスペースの作成
 Postmanのワークスペースを作成します。ワークスペースはテスト対象のサイト毎に作成することを推奨します。
+
+### コレクションの作成
+Postmanのコレクションを作成します。
+
+### Collection variablesの設定
+全リクエストで共通利用する変数を[Collection variables](https://learning.postman.com/docs/sending-requests/variables/#choosing-variables)として定義します。
+
+### Pre-request scriptの設定
+
+[Pre-request script](https://learning.postman.com/docs/writing-scripts/pre-request-scripts/)を利用すると、テストコードの前処理を定義することができます。   
+これを利用して、コレクション内のテストスクリプトで共通利用するためのメソッドを定義します。  
+
+<details>
+
+<summary>Pre-requestスクリプトの設定例</summary>
+
+```js
+postman.setGlobalVariable('kuroco', () => ({
+    endpoint: {
+        login: '/rcms-api/1/auth/login',
+        token: '/rcms-api/1/auth/token',
+        memberInsert: '/rcms-api/1/members/insert'
+    },
+    getBaseUrl() {
+        const collectionBaseUrl = pm.collectionVariables.get('baseUrl');
+        const matches = collectionBaseUrl.match(/{{(.+)}}/);
+        if (matches.length > 0) {
+            return pm.environment.get(matches[1]);
+        }
+        return collectionBaseUrl;
+    },
+    getRequestDef(path, body, accessToken = '') {
+        return {
+            async: false,
+            url: `${this.getBaseUrl()}${path}`,
+            method: 'POST',
+            header: {
+                'Content-Type': 'application/json',
+                ...accessToken
+                    ? {'X-RCMS-API-ACCESS-TOKEN': accessToken}
+                    : {}
+            },
+            body: JSON.stringify(body)
+        }
+    },
+    hasValidToken(tokenGeneratedAt = 0) {
+        const hour = 1000 * 60 * 60;
+        return _.inRange(Date.now(), tokenGeneratedAt, tokenGeneratedAt + hour);
+    },
+    generateToken(memberAuth) {
+        const loginRequest = this.getRequestDef(this.endpoint.login, {
+            ...memberAuth,
+            "login_save": 0
+        });
+        const getTokenRequest = (grant_token) => this.getRequestDef(this.endpoint.token, {
+            grant_token
+        })
+
+        pm.sendRequest(loginRequest, (err, response) => {
+            const { grant_token } = response.json();
+            pm.sendRequest(getTokenRequest(grant_token), (err, response) => {
+                console.log(response);
+                const accessToken = response.json().access_token.value;
+                const refreshToken = response.json().refresh_token.value;
+                pm.collectionVariables.set('accessToken', accessToken);
+                pm.collectionVariables.set('refreshToken', refreshToken);
+                pm.collectionVariables.set('tokenGeneratedAt', Date.now());
+                console.log(`genrated new tokens -> accessToken: ${accessToken}, refreshToken: ${refreshToken}`);
+            });
+        });
+    },
+    generateAnonymousToken() {
+        const getTokenRequest = () => this.getRequestDef(this.endpoint.token, {})
+
+        pm.sendRequest(getTokenRequest(), (err, response) => {
+            console.log(response);
+            const accessToken = response.json().access_token.value;
+            pm.collectionVariables.set('accessToken', accessToken);
+            pm.collectionVariables.set('refreshToken', null);
+            pm.collectionVariables.set('tokenGeneratedAt', Date.now());
+            console.log(`genrated new anonymous tokens -> accessToken: ${accessToken}`);
+        });
+    },
+    switchToTempMember() {
+        const timestamp = getTimeStamp();
+        const tempMemberAuth = {
+            email: `kuroco.e2e.${timestamp}@diverta.co.jp`,
+            password: 'test1234',
+        };
+        const memberInsertRequest = this.getRequestDef(
+            this.endpoint.memberInsert,
+            {
+                email: tempMemberAuth.email,
+                login_pwd: tempMemberAuth.password,
+                name1: `E2E temporary user ${timestamp}`,
+            },
+            pm.collectionVariables.get('accessToken')
+        );
+        pm.sendRequest(memberInsertRequest, (err, response) => {
+            this.generateToken(tempMemberAuth);
+        });
+
+        function getTimeStamp() {
+            const date = new Date();
+            return Math.floor(date.getTime()/1000);
+        }
+    },
+    clearStoredToken() {
+        pm.collectionVariables.unset('accessToken');
+        pm.collectionVariables.unset('refreshToken');
+        pm.collectionVariables.unset('tokenGeneratedAt');
+    },
+}));
+```
+
+</details>
+
+<!--
+TODO: 下記はTipsに移動する
 
 ### openapi.jsonのインポート
 Postmanで [Import] -> [File] を選び、インストール時に取得したopenapi.jsonを選択してください。
 
 *Generate collection from imported APIs* をチェックすると、インポート時に各エンドポイントに対するリクエストを含むコレクションが自動で生成されるようになります。チェックを外すと、コレクションを全て手動で作成する必要が出てくるため、チェックしておくことを推奨します。
 https://diverta.gyazo.com/7f055ad7b9ff2b1d617806f585c8bfc0
-<!-- チェックしないとどうなるんだっけ？ 理由も記載しておきたい -->
-<!--
-    チェックしないとコレクションが自動生成されないだけですが、どちらの方がいいんでしょうかね？
-    自動生成されたコレクションは単体テストとしてほぼそのまま使うのが主な用途だと思いますが、それが必要ない場合には一から作った方が楽かもしれません
--->
 
 インポートが完了すると、以下のようなコレクションファイルが生成されます。  
 https://diverta.gyazo.com/8952b8018e66fe3893b319eb5648a9e0
@@ -60,155 +166,60 @@ https://diverta.gyazo.com/353aaaf45f0c68bcedcd22d6a17b6b08
 
 不要なパラメータは削除あるいは無効化して、必要なパラメータは適切な値に書き換える必要があります。
 https://diverta.gyazo.com/4db17b0f438b8b5b0e217ff75ff0156e
+-->
 
+### API結合テストの作成
 
-### テストコードの作成
-コレクション内にテストコードを記述します。
+以下のシナリオをベースに、APIの結合テストを作成する方法を記載します。
 
-#### Collection variablesを定義する
-全リクエストで共通利用する変数を[Collection variables](https://learning.postman.com/docs/sending-requests/variables/#choosing-variables)として定義します。
+1. コンテンツの新規追加 (`Topics::insert`)
+2. 追加したコンテンツの取得 (`Topics::details`)
+3. 取得結果のアサーション
 
-#### Pre-requestスクリプトを定義する
-認証が必要なAPIがテスト対象に含まれる場合、テストコードの実行前にログイン処理を行う必要があります。  
+#### フォルダの作成
+1つのシナリオはコレクション内の1つのフォルダに対応します。まずはフォルダを作成します。
+https://diverta.gyazo.com/bf8db63513bcbee00b46e8eed064ce8c
 
-[Pre-request script](https://learning.postman.com/docs/writing-scripts/pre-request-scripts/)を利用すると、テストコードの前処理を定義することができます。 
+必要に応じて、Pre-requestにAPIの認証を行うコードを追加します。
+https://diverta.gyazo.com/57f49e8486ae95b917a088f2063a4946
 
-- 例: Pre-requestスクリプト
-    ```js
-    postman.setGlobalVariable('kuroco', () => ({
-        endpoint: {
-            login: '/rcms-api/1/auth/login',
-            token: '/rcms-api/1/auth/token',
-            memberInsert: '/rcms-api/1/members/insert'
-        },
-        getBaseUrl() {
-            const collectionBaseUrl = pm.collectionVariables.get('baseUrl');
-            const matches = collectionBaseUrl.match(/{{(.+)}}/);
-            if (matches.length > 0) {
-                return pm.environment.get(matches[1]);
-            }
-            return collectionBaseUrl;
-        },
-        getRequestDef(path, body, accessToken = '') {
-            return {
-                async: false,
-                url: `${this.getBaseUrl()}${path}`,
-                method: 'POST',
-                header: {
-                    'Content-Type': 'application/json',
-                    ...accessToken
-                        ? {'X-RCMS-API-ACCESS-TOKEN': accessToken}
-                        : {}
-                },
-                body: JSON.stringify(body)
-            }
-        },
-        hasValidToken(tokenGeneratedAt = 0) {
-            const hour = 1000 * 60 * 60;
-            return _.inRange(Date.now(), tokenGeneratedAt, tokenGeneratedAt + hour);
-        },
-        generateToken(memberAuth) {
-            const loginRequest = this.getRequestDef(this.endpoint.login, {
-                ...memberAuth,
-                "login_save": 0
-            });
-            const getTokenRequest = (grant_token) => this.getRequestDef(this.endpoint.token, {
-                grant_token
-            })
+#### リクエストの追加
+1. コンテンツの新規追加 (`Topics::insert`)
 
-            pm.sendRequest(loginRequest, (err, response) => {
-                const { grant_token } = response.json();
-                pm.sendRequest(getTokenRequest(grant_token), (err, response) => {
-                    console.log(response);
-                    const accessToken = response.json().access_token.value;
-                    const refreshToken = response.json().refresh_token.value;
-                    pm.collectionVariables.set('accessToken', accessToken);
-                    pm.collectionVariables.set('refreshToken', refreshToken);
-                    pm.collectionVariables.set('tokenGeneratedAt', Date.now());
-                    console.log(`genrated new tokens -> accessToken: ${accessToken}, refreshToken: ${refreshToken}`);
-                });
-            });
-        },
-        generateAnonymousToken() {
-            const getTokenRequest = () => this.getRequestDef(this.endpoint.token, {})
+    コンテンツを追加するリクエスト (`Topics::insert`を設定したエンドポイントへのリクエスト) をコレクションに追加します。
 
-            pm.sendRequest(getTokenRequest(), (err, response) => {
-                console.log(response);
-                const accessToken = response.json().access_token.value;
-                pm.collectionVariables.set('accessToken', accessToken);
-                pm.collectionVariables.set('refreshToken', null);
-                pm.collectionVariables.set('tokenGeneratedAt', Date.now());
-                console.log(`genrated new anonymous tokens -> accessToken: ${accessToken}`);
-            });
-        },
-        switchToTempMember() {
-            const timestamp = getTimeStamp();
-            const tempMemberAuth = {
-                email: `kuroco.e2e.${timestamp}@diverta.co.jp`,
-                password: 'test1234',
-            };
-            const memberInsertRequest = this.getRequestDef(
-                this.endpoint.memberInsert,
-                {
-                    email: tempMemberAuth.email,
-                    login_pwd: tempMemberAuth.password,
-                    name1: `E2E temporary user ${timestamp}`,
-                },
-                pm.collectionVariables.get('accessToken')
-            );
-            pm.sendRequest(memberInsertRequest, (err, response) => {
-                this.generateToken(tempMemberAuth);
-            });
+    レスポンスのidなどの値を他のリクエストで使うため、Testsスクリプトで`pm.variables`を用いて値を変数に保存します。
+    https://diverta.gyazo.com/a6e192518c304537bb4d53bba00f022c
 
-            function getTimeStamp() {
-                const date = new Date();
-                return Math.floor(date.getTime()/1000);
-            }
-        },
-        clearStoredToken() {
-            pm.collectionVariables.unset('accessToken');
-            pm.collectionVariables.unset('refreshToken');
-            pm.collectionVariables.unset('tokenGeneratedAt');
-        },
-    }));
-    ```
+2. 追加したコンテンツの取得 (`Topics::details`)
 
-#### リクエストのTestsスクリプトを編集する
-Testsタブを開き、各リクエスト毎のテストコードを記述していきます。
+    追加したコンテンツを取得するリクエスト (`Topics::details`を設定したエンドポイントへのリクエスト) を、コンテンツ追加リクエストの後ろに追加します。
 
-頻繁に利用する記法のサンプルを以下に記載します。  
-より詳しいスクリプトの書き方は[Postmanのドキュメント](https://learning.postman.com/docs/)を参照してください。
+    先ほど保存した変数を利用して、リクエストのパラメータを構成します。
+    https://diverta.gyazo.com/91c16ba3b9f58d0db474745ffc75548e
 
-- 例: レスポンスステータスコードに対するアサーション
-    ```js
-    pm.test("Status code is 200", function () {
-        pm.response.to.have.status(200);
-    });
-    ```
-- 例: レスポンスボディの値に対するアサーション
-    ```js
-    pm.test("Topics details response", function () {
-        const jsonData = pm.response.json();
-        pm.expect(jsonData.details).to.exist;
+3. 取得結果のアサーション
 
-        pm.expect(jsonData.details.topics_id).to.be.a('number');
-        pm.expect(jsonData.details.ext_col_01).to.eql('Kuroco');
-    });
-    ```
-- 例: `pm.variables`を用いた複数リクエスト間での[変数共有](https://learning.postman.com/docs/sending-requests/variables/)
-    ```js
-    const jsonData = pm.response.json();
-    pm.variables.set('INSERTED_TOPICS_ID', jsonData.id); // 値の保存
-    ```
-    ```js
-    const insertedTopicsId = pm.variables.get('INSERTED_TOPICS_ID'); // 値の読み込み
-    pm.expect(jsonData.details.topics_id).to.eql(insertedTopicsId);
-    ```
-    
+    コンテンツ取得リクエストのTestsスクリプトに、取得結果に対するアサーションを追加します。  
+
+    - 例
+        ```js
+        pm.test("Response check", function () {
+            const jsonData = pm.response.json();
+            pm.expect(jsonData.details).to.exist;
+
+            pm.expect(jsonData.details.topics_id, "topics_id").to.eql(pm.variables.get("topics_id"));
+            pm.expect(jsonData.details.subject, "subject").to.eql("Insert Test");
+            pm.expect(jsonData.details.ext_col_01, "ext_col_01").to.eql("test");
+        });
+        ```
+
+4. テストの実行
+    テストコードの記述が完了したら、作成したシナリオのフォルダ -> [Run] の順にクリックして、テストを実行してください。
+    https://diverta.gyazo.com/9e022bcc0587ba123bc8ebf9cf72ace6
+
 
 ### テストコードの保存
-
-
 
 作成したPostmanのコレクションファイルを[エクスポート](https://learning.postman.com/docs/getting-started/importing-and-exporting-data/#exporting-collections)します。
 
@@ -277,14 +288,7 @@ on:
     branches:
       - main
     paths:
-      - 'tests/newman/**'
-      - '!tests/newman/README.md'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'tests/newman/**'
-      - '!tests/newman/README.md'
+      - 'tests/**'
   schedule:
     - cron: "0 15 * * *"
   workflow_dispatch:
@@ -312,57 +316,42 @@ jobs:
 
 ```
 
-### GitHubリモートリポジトリにpush
+### リモートリポジトリへの反映
+
 
 
 ## Tips
 
-### 結合テストの作成
-以下のように複数のAPIを使った結合テストを作成したい場合は、複数のリクエストをコピーして組み合わせることで実現できます。
+### テストコードの記述サンプル
 
-1. コンテンツの新規追加 (`Topics::insert`)
-2. 追加したコンテンツの取得 (`Topics::details`)
-3. 取得結果のアサーション
+頻繁に利用する記法のサンプルを以下に記載します。  
+より詳しいスクリプトの書き方は[Postmanのドキュメント](https://learning.postman.com/docs/)を参照してください。
 
-#### フォルダの作成
-1つのシナリオはコレクション内の1つのフォルダに対応します。まずはフォルダを作成します。
-https://diverta.gyazo.com/bf8db63513bcbee00b46e8eed064ce8c
+- 例: レスポンスステータスコードに対するアサーション
+    ```js
+    pm.test("Status code is 200", function () {
+        pm.response.to.have.status(200);
+    });
+    ```
+- 例: レスポンスボディの値に対するアサーション
+    ```js
+    pm.test("Topics details response", function () {
+        const jsonData = pm.response.json();
+        pm.expect(jsonData.details).to.exist;
 
-必要に応じて、Pre-requestにAPIの認証を行うコードを追加します。
-https://diverta.gyazo.com/57f49e8486ae95b917a088f2063a4946
-
-#### リクエストの追加
-1. コンテンツの新規追加 (`Topics::insert`)
-
-    コンテンツを追加するリクエスト (`Topics::insert`) をコレクションに追加します。
-
-    レスポンスのidなどの値を他のリクエストで使うため、Testsスクリプトで`pm.variables`を用いて値を変数に保存します。
-    https://diverta.gyazo.com/a6e192518c304537bb4d53bba00f022c
-
-2. 追加したコンテンツの取得 (`Topics::details`)
-
-    追加したコンテンツを取得するリクエスト (`Topics::details`) を、コンテンツ追加リクエストの後ろに追加します。
-
-    先ほど保存した変数を利用して、リクエストのパラメータを構成します。
-    https://diverta.gyazo.com/91c16ba3b9f58d0db474745ffc75548e
-
-3. 取得結果のアサーション
-
-    コンテンツ取得リクエストのTestsスクリプトに、取得結果に対するアサーションを追加します。
-    - 例
-        ```js
-        pm.test("Response check", function () {
-            const jsonData = pm.response.json();
-            pm.expect(jsonData.details).to.exist;
-
-            pm.expect(jsonData.details.topics_id, "topics_id").to.eql(pm.variables.get("topics_id"));
-            pm.expect(jsonData.details.subject, "subject").to.eql("Insert Test");
-            pm.expect(jsonData.details.ext_col_01, "ext_col_01").to.eql("test");
-        });
-        ```
-
-#### 実行例
-https://diverta.gyazo.com/9e022bcc0587ba123bc8ebf9cf72ace6
+        pm.expect(jsonData.details.topics_id).to.be.a('number');
+        pm.expect(jsonData.details.ext_col_01).to.eql('Kuroco');
+    });
+    ```
+- 例: `pm.variables`を用いた複数リクエスト間での[変数共有](https://learning.postman.com/docs/sending-requests/variables/)
+    ```js
+    const jsonData = pm.response.json();
+    pm.variables.set('INSERTED_TOPICS_ID', jsonData.id); // 値の保存
+    ```
+    ```js
+    const insertedTopicsId = pm.variables.get('INSERTED_TOPICS_ID'); // 値の読み込み
+    pm.expect(jsonData.details.topics_id).to.eql(insertedTopicsId);
+    ```
 
 ### 共通ファイルの作成
 複数のコレクションを定義している場合は、各コレクション毎にCollection variablesやPre-requestを用意する必要がありますが、  
@@ -416,4 +405,39 @@ https://diverta.gyazo.com/9e022bcc0587ba123bc8ebf9cf72ace6
     ]
 }
 // ]
+```
+
+### opeapi.jsonからのコレクション生成
+
+#### openapi.jsonの取得
+
+以下のコマンドを実行して、テスト対象のAPIの`openapi.json`ファイルを取得します。  
+(改善事項があり、現在は下記を実行するだけでは取得できないので、手動で取得してください)
+
+```sh
+kuroco-newman openapi-fetch --id {api_id} --key {sdk_key}
+```
+
+#### openapi.jsonのインポート
+Postmanで [Import] -> [File] を選び、インストール時に取得したopenapi.jsonを選択してください。
+
+*Generate collection from imported APIs* をチェックすると、インポート時に各エンドポイントに対するリクエストを含むコレクションが自動で生成されるようになります。チェックを外すと、コレクションを全て手動で作成する必要が出てくるため、チェックしておくことを推奨します。
+https://diverta.gyazo.com/7f055ad7b9ff2b1d617806f585c8bfc0
+<!-- チェックしないとどうなるんだっけ？ 理由も記載しておきたい -->
+<!--
+    チェックしないとコレクションが自動生成されないだけですが、どちらの方がいいんでしょうかね？
+    自動生成されたコレクションは単体テストとしてほぼそのまま使うのが主な用途だと思いますが、それが必要ない場合には一から作った方が楽かもしれません
+-->
+
+インポートが完了すると、以下のようなコレクションファイルが生成されます。  
+https://diverta.gyazo.com/8952b8018e66fe3893b319eb5648a9e0
+
+インポート直後のコレクションでは、各リクエストのパラメータにダミーの初期値が設定されています。
+https://diverta.gyazo.com/353aaaf45f0c68bcedcd22d6a17b6b08
+
+不要なパラメータは削除あるいは無効化して、必要なパラメータは適切な値に書き換える必要があります。
+https://diverta.gyazo.com/4db17b0f438b8b5b0e217ff75ff0156e
+
+
+```mおとn
 ```
