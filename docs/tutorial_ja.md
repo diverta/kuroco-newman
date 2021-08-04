@@ -211,7 +211,7 @@ postman.setGlobalVariable('kuroco', () => ({
         });
         ```
 
-4. テストの実行
+4. テストの実行  
     テストコードの記述が完了したら、作成したシナリオのフォルダ -> [Run] の順にクリックして、テストを実行してください。
     <!-- https://diverta.gyazo.com/9e022bcc0587ba123bc8ebf9cf72ace6 -->
     ![Run tests](./images/add_request3.gif)
