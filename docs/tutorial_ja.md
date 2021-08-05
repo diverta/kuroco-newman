@@ -284,54 +284,64 @@ kuroco.login({
         ```
 
 4. テストの実行  
-    テストコードの記述が完了したら、作成したシナリオのフォルダ -> [Run] の順にクリックして、テストを実行してください。
+    テストコードの記述が完了したら、作成したシナリオのフォルダ -> [Run] の順にクリックしてテストを実行し、期待通りに動作することを確認してください。
     <!-- https://diverta.gyazo.com/9e022bcc0587ba123bc8ebf9cf72ace6 -->
     ![Run tests](./images/add_request3.gif)
 
 
 ### テストコードの保存
 
-作成したPostmanのコレクションファイルを[エクスポート](https://learning.postman.com/docs/getting-started/importing-and-exporting-data/#exporting-collections)します。
+テストの記述が完了したら、作成したPostmanのコレクションファイルを[エクスポート](https://learning.postman.com/docs/getting-started/importing-and-exporting-data/#exporting-collections)します。
 
-次に、インポートしたファイルを、`kuroco-newman init`で自動生成されたディレクトリの下に配置します。  
-
+次にインポートしたファイルを、`kuroco-newman init`で自動生成された`collections`ディレクトリに、下記の構成で配置します。  
+collections配下のディレクトリについては、手動で作成する必要があります。
 
 ```
 {site_name}
-|-- collections
-|   `-- {api_id}
-|       `-- {test_type}                     # unit, integration, etc.
-|           `- {Postman collection file}
-|-- environments
-`-- fixtures
+`-- collections
+    `-- {api_id}                            # 任意のAPI識別子 (テスト対象のapi_idなど)
+        `-- {test_type}                     # 任意のテスト形式名 (unit, integration, etc.)
+            `- {Postman collection file}    # *.postman_collection.json
 ```
 
-kuroco-newman.config.json の `target` を編集します。この時、各種ディレクトリやファイルの名前と合わせるようにします。
-
 #### 例
+```sh
+cd tests/kuroco-newman-sample
+mkdir -p collections/5/integration
+mv path/to/Kuroco-newman-sample-scenario.postman_collection.json collections/5/integration
+```
+
 ```
 kuroco-newman-sample
 |-- collections
 |   `-- 5
-|       `-- unit
-|           `- Kuroco-test.postman_collection.json
+|       `-- integration
+|           `- Kuroco-newman-sample-scenario.postman_collection.json
 |-- environments
 `-- fixtures
 ```
-上のようなディレクトリ構造の場合、kuroco-newman.config.jsonを以下のように編集します。
+
+### configファイルの設定
+
+kuroco-newman.config.json の `target` を編集します。  
+この時、各種ディレクトリやファイルの名前と合わせるようにします。
+
+#### 例
+
 ```jsonc
 {
     "name": "kuroco-newman-sample", 
     "collections": [
         {
-            "id": "5", // "{api_id}"
+            "id": "5",
             "files": {
-                "unit": "*.json" // "{test_type}": "{glob pattern}"
+                "integration": "*.json"
             }
         }
     ]
 }
 ```
+
 
 ## テストコードの実行
 
@@ -346,7 +356,7 @@ npx kuroco-newman run
 ![Reports](./images/report.png)
 
 ### GitHub Actionsの設定
-テストの自動実行を行わせるため、GitHub Actionsのワークフローを設定します。
+作成したテストを自動実行させるため、GitHub Actionsのワークフローを設定します。
 
 #### package.jsonの設定
 package.jsonのscriptsに以下を追記します。
