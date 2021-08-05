@@ -56,117 +56,152 @@ Postmanのコレクションを作成します。
 <summary>Pre-requestスクリプトの設定例</summary>
 
 ```js
-postman.setGlobalVariable('kuroco', () => ({
-    endpoint: {
-        login: '/rcms-api/1/auth/login',
-        token: '/rcms-api/1/auth/token',
-        memberInsert: '/rcms-api/1/members/insert',
-        cookieLogin: '/rcms-api/3/auth/login',
-        cookieLogout: '/rcms-api/3/auth/logout',
-    },
-    getBaseUrl() {
-        const collectionBaseUrl = pm.collectionVariables.get('baseUrl');
-        const matches = collectionBaseUrl.match(/{{(.+)}}/);
-        if (matches && matches.length > 0) {
-            return pm.environment.get(matches[1]);
+postman.setGlobalVariable('kuroco', (apiConfig = {apiId: 1}) => {
+    // Please edit each values for your environment
+    const endpointConfig = {
+        // api_id: {/* endpoint list */}
+        1: {
+            login: '/rcms-api/1/auth/login',
+            token: '/rcms-api/1/auth/token',
+            logout: '/rcms-api/1/auth/logout',
+            memberInsert: '/rcms-api/1/members/insert'
+        },
+        3: {
+            login: '/rcms-api/3/auth/login',
+            logout: '/rcms-api/3/auth/logout'
         }
-        return collectionBaseUrl;
-    },
-    getRequestDef(path, body, accessToken = '') {
-        return {
-            async: false,
-            url: `${this.getBaseUrl()}${path}`,
-            method: 'POST',
-            header: {
-                'Content-Type': 'application/json',
-                ...accessToken
-                    ? {'X-RCMS-API-ACCESS-TOKEN': accessToken}
-                    : {}
-            },
-            body: JSON.stringify(body)
+    };
+    class Kuroco {
+        constructor(apiConfig) {
+            this.apiId = apiConfig.apiId;
+            if (!endpointConfig[this.apiId]) {
+                throw new Error(`Endpoint configuration not found: api_id=${this.apiId}`);
+            }
+            this.endpointConfig = endpointConfig[this.apiId];
         }
-    },
-    hasValidToken(tokenGeneratedAt = 0) {
-        const hour = 1000 * 60 * 60;
-        return _.inRange(Date.now(), tokenGeneratedAt, tokenGeneratedAt + hour);
-    },
-    generateToken(memberAuth) {
-        const loginRequest = this.getRequestDef(this.endpoint.login, {
-            ...memberAuth,
-            "login_save": 0
-        });
-        const getTokenRequest = (grant_token) => this.getRequestDef(this.endpoint.token, {
-            grant_token
-        })
-        pm.sendRequest(loginRequest, (err, response) => {
-            const { grant_token } = response.json();
-            pm.sendRequest(getTokenRequest(grant_token), (err, response) => {
+        /**
+         * Common
+         */
+        getEndpoint(name) {
+            if (!this.endpointConfig[name]) {
+                throw new Error(`Endpoint configuration not found: api_id=${this.apiId}, name=${name}`);
+            }
+            return this.endpointConfig[name];
+        }
+        getBaseUrl() {
+            const collectionBaseUrl = pm.collectionVariables.get('baseUrl');
+            const matches = collectionBaseUrl.match(/{{(.+)}}/);
+            if (matches && matches.length > 0) {
+                return pm.environment.get(matches[1]);
+            }
+            return collectionBaseUrl;
+        }
+        getRequestDef(path, body, accessToken = '') {
+            return {
+                async: false,
+                url: `${this.getBaseUrl()}${path}`,
+                method: 'POST',
+                header: {
+                    'Content-Type': 'application/json',
+                    ...accessToken
+                        ? {'X-RCMS-API-ACCESS-TOKEN': accessToken}
+                        : {}
+                },
+                body: JSON.stringify(body)
+            }
+        }
+        /**
+         * Authentication
+         */
+        login(memberAuth) {
+            const loginRequest = this.getRequestDef(this.getEndpoint('login'), {
+                ...memberAuth,
+                "login_save": 0
+            });
+            pm.sendRequest(loginRequest, (err, response) => {
+                const { grant_token, info } = response.json();
+                console.log(response);
+            });
+        }
+        logout() {
+            const loginRequest = this.getRequestDef(this.getEndpoint('logout'), {});
+            pm.sendRequest(loginRequest, (err, response) => {
+                console.log(response);
+            });
+        }
+        /**
+         * Authentication (Token)
+         */
+        generateToken(memberAuth) {
+            const loginRequest = this.getRequestDef(this.getEndpoint('login'), {
+                ...memberAuth,
+                "login_save": 0
+            });
+            const getTokenRequest = (grant_token) => this.getRequestDef(this.getEndpoint('token'), {
+                grant_token
+            })
+            pm.sendRequest(loginRequest, (err, response) => {
+                const { grant_token } = response.json();
+                pm.sendRequest(getTokenRequest(grant_token), (err, response) => {
+                    console.log(response);
+                    const accessToken = response.json().access_token.value;
+                    const refreshToken = response.json().refresh_token.value;
+                    pm.collectionVariables.set('accessToken', accessToken);
+                    pm.collectionVariables.set('refreshToken', refreshToken);
+                    pm.collectionVariables.set('tokenGeneratedAt', Date.now());
+                    console.log(`genrated new tokens -> accessToken: ${accessToken}, refreshToken: ${refreshToken}`);
+                });
+            });
+        }
+        generateAnonymousToken() {
+            const getTokenRequest = () => this.getRequestDef(this.getEndpoint('token'), {})
+            pm.sendRequest(getTokenRequest(), (err, response) => {
                 console.log(response);
                 const accessToken = response.json().access_token.value;
-                const refreshToken = response.json().refresh_token.value;
                 pm.collectionVariables.set('accessToken', accessToken);
-                pm.collectionVariables.set('refreshToken', refreshToken);
+                pm.collectionVariables.set('refreshToken', null);
                 pm.collectionVariables.set('tokenGeneratedAt', Date.now());
-                console.log(`genrated new tokens -> accessToken: ${accessToken}, refreshToken: ${refreshToken}`);
+                console.log(`genrated new anonymous tokens -> accessToken: ${accessToken}`);
             });
-        });
-    },
-    generateAnonymousToken() {
-        const getTokenRequest = () => this.getRequestDef(this.endpoint.token, {})
-        pm.sendRequest(getTokenRequest(), (err, response) => {
-            console.log(response);
-            const accessToken = response.json().access_token.value;
-            pm.collectionVariables.set('accessToken', accessToken);
-            pm.collectionVariables.set('refreshToken', null);
-            pm.collectionVariables.set('tokenGeneratedAt', Date.now());
-            console.log(`genrated new anonymous tokens -> accessToken: ${accessToken}`);
-        });
-    },
-    switchToTempMember() {
-        const timestamp = getTimeStamp();
-        const tempMemberAuth = {
-            email: `kuroco.e2e.${timestamp}@diverta.co.jp`,
-            password: 'test1234',
-        };
-        const memberInsertRequest = this.getRequestDef(
-            this.endpoint.memberInsert,
-            {
-                email: tempMemberAuth.email,
-                login_pwd: tempMemberAuth.password,
-                name1: `E2E temporary user ${timestamp}`,
-            },
-            pm.collectionVariables.get('accessToken')
-        );
-        pm.sendRequest(memberInsertRequest, (err, response) => {
-            this.generateToken(tempMemberAuth);
-        });
-        function getTimeStamp() {
-            const date = new Date();
-            return Math.floor(date.getTime()/1000);
         }
-    },
-    clearStoredToken() {
-        pm.collectionVariables.unset('accessToken');
-        pm.collectionVariables.unset('refreshToken');
-        pm.collectionVariables.unset('tokenGeneratedAt');
-    },
-    login(memberAuth) {
-        const loginRequest = this.getRequestDef(this.endpoint.cookieLogin, {
-            ...memberAuth,
-            "login_save": 0
-        });
-        pm.sendRequest(loginRequest, (err, response) => {
-            const { grant_token, info } = response.json();
-            console.log(response);
-        });
-    },
-    logout() {
-        const loginRequest = this.getRequestDef(this.endpoint.cookieLogout, {});
-        pm.sendRequest(loginRequest, (err, response) => {
-            console.log(response);
-        });
-    },
-}));
+        hasValidToken(tokenGeneratedAt = 0) {
+            const hour = 1000 * 60 * 60;
+            return _.inRange(Date.now(), tokenGeneratedAt, tokenGeneratedAt + hour);
+        }
+        clearStoredToken() {
+            pm.collectionVariables.unset('accessToken');
+            pm.collectionVariables.unset('refreshToken');
+            pm.collectionVariables.unset('tokenGeneratedAt');
+        }
+        /**
+         * Member
+         */
+        switchToTempMember() {
+            const timestamp = getTimeStamp();
+            const tempMemberAuth = {
+                email: `kuroco.e2e.${timestamp}@diverta.co.jp`,
+                password: 'test1234',
+            };
+            const memberInsertRequest = this.getRequestDef(
+                this.getEndpoint('memberInsert'),
+                {
+                    email: tempMemberAuth.email,
+                    login_pwd: tempMemberAuth.password,
+                    name1: `E2E temporary user ${timestamp}`,
+                },
+                pm.collectionVariables.get('accessToken')
+            );
+            pm.sendRequest(memberInsertRequest, (err, response) => {
+                this.generateToken(tempMemberAuth);
+            });
+            function getTimeStamp() {
+                const date = new Date();
+                return Math.floor(date.getTime()/1000);
+            }
+        }
+    }
+    return new Kuroco(apiConfig);
+});
 ```
 
 </details>
@@ -289,10 +324,29 @@ npx kuroco-newman run
 ![Reports](./images/report.png)
 
 ### GitHub Actionsの設定
-テストの自動実行を行わせるため、GitHub Actionsのワークフローを以下のように設定します。
+テストの自動実行を行わせるため、GitHub Actionsのワークフローを設定します。
 
-- PATの設定(publicリポジトリ化されたら不要かもしれない)
-- ワークフローの設定
+#### package.jsonの設定
+package.jsonのscriptsに以下を追記します。
+
+```
+"test:newman": "npx kuroco-newman run"
+```
+
+#### PATの設定
+注) kuroco-newmanのpublicリポジトリ化を検討しています。公開リポジトリに変更された場合、以下のPAT設定フローは不要になります。
+
+1. repo権限を持つGitHubのPersonal access tokensを発行します。
+2. 発行したトークンを、Actions secretsの`PAT`として設定します。
+
+
+#### workflowファイルの作成
+GitHub Actionsのworkflowファイルを設定します。  
+
+<details>
+
+<summary>ワークフローの設定例 (newman.yaml)</summary>
+
 ```yaml
 name: Newman e2e testing
 
@@ -328,6 +382,10 @@ jobs:
           path: reports
 
 ```
+
+</details>
+
+レポートをデプロイする必要がある場合は、`report.outputDir`配下のファイルをアップロードするよう個別に設定してください。
 
 ## リモートリポジトリへの反映
 
