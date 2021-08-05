@@ -373,7 +373,7 @@ jobs:
       - name: Install Dependencies
         run: npm install
       - name: Run All Collections
-        run: "npm run test:newman:all"
+        run: "npm run test:newman"
       - name: Upload test report
         uses: actions/upload-artifact@v2
         if: always()
