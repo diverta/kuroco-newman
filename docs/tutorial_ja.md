@@ -60,12 +60,14 @@ postman.setGlobalVariable('kuroco', () => ({
     endpoint: {
         login: '/rcms-api/1/auth/login',
         token: '/rcms-api/1/auth/token',
-        memberInsert: '/rcms-api/1/members/insert'
+        memberInsert: '/rcms-api/1/members/insert',
+        cookieLogin: '/rcms-api/3/auth/login',
+        cookieLogout: '/rcms-api/3/auth/logout',
     },
     getBaseUrl() {
         const collectionBaseUrl = pm.collectionVariables.get('baseUrl');
         const matches = collectionBaseUrl.match(/{{(.+)}}/);
-        if (matches.length > 0) {
+        if (matches && matches.length > 0) {
             return pm.environment.get(matches[1]);
         }
         return collectionBaseUrl;
@@ -96,7 +98,6 @@ postman.setGlobalVariable('kuroco', () => ({
         const getTokenRequest = (grant_token) => this.getRequestDef(this.endpoint.token, {
             grant_token
         })
-
         pm.sendRequest(loginRequest, (err, response) => {
             const { grant_token } = response.json();
             pm.sendRequest(getTokenRequest(grant_token), (err, response) => {
@@ -112,7 +113,6 @@ postman.setGlobalVariable('kuroco', () => ({
     },
     generateAnonymousToken() {
         const getTokenRequest = () => this.getRequestDef(this.endpoint.token, {})
-
         pm.sendRequest(getTokenRequest(), (err, response) => {
             console.log(response);
             const accessToken = response.json().access_token.value;
@@ -140,7 +140,6 @@ postman.setGlobalVariable('kuroco', () => ({
         pm.sendRequest(memberInsertRequest, (err, response) => {
             this.generateToken(tempMemberAuth);
         });
-
         function getTimeStamp() {
             const date = new Date();
             return Math.floor(date.getTime()/1000);
@@ -150,6 +149,22 @@ postman.setGlobalVariable('kuroco', () => ({
         pm.collectionVariables.unset('accessToken');
         pm.collectionVariables.unset('refreshToken');
         pm.collectionVariables.unset('tokenGeneratedAt');
+    },
+    login(memberAuth) {
+        const loginRequest = this.getRequestDef(this.endpoint.cookieLogin, {
+            ...memberAuth,
+            "login_save": 0
+        });
+        pm.sendRequest(loginRequest, (err, response) => {
+            const { grant_token, info } = response.json();
+            console.log(response);
+        });
+    },
+    logout() {
+        const loginRequest = this.getRequestDef(this.endpoint.cookieLogout, {});
+        pm.sendRequest(loginRequest, (err, response) => {
+            console.log(response);
+        });
     },
 }));
 ```
