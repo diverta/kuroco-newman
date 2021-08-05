@@ -224,9 +224,16 @@ postman.setGlobalVariable('kuroco', (apiConfig = {apiId: 1}) => {
 <!-- https://diverta.gyazo.com/bf8db63513bcbee00b46e8eed064ce8c -->
 ![Add folder](./images/add_folder1.png)
 
-必要に応じて、Pre-requestにAPIの認証を行うコードを追加します。
+シナリオフォルダのPre-requestに、認証を行うコードを追加します。
+```js
+const kuroco = eval(globals.kuroco)({apiId: 1});
+kuroco.login({
+    email: "your@email",
+    password: "your_password"
+});
+```
 <!-- https://diverta.gyazo.com/57f49e8486ae95b917a088f2063a4946 -->
-![Add Pre-request](./images/add_folder2.png)
+<!-- ![Add Pre-request](./images/add_folder2.png) -->
 
 ### リクエストの追加
 1. コンテンツの新規追加 (`Topics::insert`)
@@ -343,10 +350,7 @@ package.jsonのscriptsに以下を追記します。
 #### workflowファイルの作成
 GitHub Actionsのworkflowファイルを設定します。  
 
-<details>
-
-<summary>ワークフローの設定例 (newman.yaml)</summary>
-
+ワークフローの設定例 (newman.yaml)
 ```yaml
 name: Newman e2e testing
 
@@ -382,8 +386,6 @@ jobs:
           path: reports
 
 ```
-
-</details>
 
 レポートをデプロイする必要がある場合は、`report.outputDir`配下のファイルをアップロードするよう個別に設定してください。
 
@@ -431,32 +433,7 @@ jobs:
 複数のコレクションを管理する場合、各コレクション毎にCollection variablesやPre-requestを用意する必要がありますが、  
 コレクション間で完全に共通の定義を利用したい場合、これは非常に煩雑な作業となります。
 
-そのような場合は以下の方法で、共通利用可能な変数・スクリプトを定義してください。
-
-#### Postmanファイルの作成
-- Environment  
-    コレクション間で共通の環境変数を定義したい場合は、[Environment](https://learning.postman.com/docs/sending-requests/managing-environments/)ファイルを利用します。  
-    <!-- https://diverta.gyazo.com/584cdd26b1648aaceb5e1e139de78476 -->
-    ![Environments](./images/environment1.png)
-
-    environmentファイルは複数作成することが可能です。  
-    参照先のファイルは画面右上のプルダウンから切り替えることができます。
-    <!-- https://diverta.gyazo.com/11a9fd7bd9fd456da0e85fa77c0dd1f8 -->
-    ![Change environments](./images/environment2.png)
-- Globals  
-    コレクション間で共通のスクリプトを定義したい場合は、globalsファイルを利用します。  
-    <!-- https://diverta.gyazo.com/bbadcf4f82827a7355874bdb25654f37 -->
-    ![Globals](./images/globals.png)
-
-    globalsファイルに定義したスクリプトは、以下のようにして使用します。
-    ```js
-    const kuroco = eval(globals.kuroco)();
-    kuroco.generateToken({
-        ...
-    });
-    ```
-
-#### テスト管理ディレクトリの設定
+そのような場合は以下の方法で、共通利用可能な変数・スクリプトを定義することができます。  
 作成したファイルは、`kuroco-newman init`で自動生成された`environments`ディレクトリの配下に保存します。
 ```
 {site_name}
@@ -465,6 +442,29 @@ jobs:
     |-- {Postman envitonment file}          # optional
     `-- {Postman globals file}              # optional
 ```
+
+#### Environmentファイル
+コレクション間で共通の環境変数を定義したい場合は、[Environment](https://learning.postman.com/docs/sending-requests/managing-environments/)ファイルを利用します。  
+<!-- https://diverta.gyazo.com/584cdd26b1648aaceb5e1e139de78476 -->
+![Environments](./images/environment1.png)
+
+environmentファイルは複数作成することが可能です。  
+参照先のファイルは画面右上のプルダウンから切り替えることができます。
+<!-- https://diverta.gyazo.com/11a9fd7bd9fd456da0e85fa77c0dd1f8 -->
+![Change environments](./images/environment2.png)
+
+#### Globalsファイル
+    コレクション間で共通のスクリプトを定義したい場合は、globalsファイルを利用します。  
+    <!-- https://diverta.gyazo.com/bbadcf4f82827a7355874bdb25654f37 -->
+    ![Globals](./images/globals.png)
+
+    globalsファイルに定義したスクリプトは、Pre-requestと同様、以下のように使用することができます。
+    ```js
+    const kuroco = eval(globals.kuroco)({apiId: 1});
+    kuroco.generateToken({
+        ...
+    });
+    ```
 
 #### kuroco-newman.config.jsonの設定
 以下のように、保存したenvironment/globalsファイルの名称を指定します。  
