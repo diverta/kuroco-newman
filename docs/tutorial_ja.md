@@ -43,17 +43,23 @@ Postmanのワークスペースを作成します。ワークスペースはテ�
 ### コレクションの作成
 Postmanのコレクションを作成します。
 
-### Collection variablesの設定
-全リクエストで共通利用する変数を[Collection variables](https://learning.postman.com/docs/sending-requests/variables/#choosing-variables)として定義します。
-
 ### Pre-request scriptの設定
 
 [Pre-request script](https://learning.postman.com/docs/writing-scripts/pre-request-scripts/)を利用すると、テストコードの前処理を定義することができます。   
-これを利用して、コレクション内のテストスクリプトで共通利用するためのメソッドを定義します。  
+これを利用して、コレクション内のテストスクリプトで共通利用するためのメソッドを定義します。
+
+ここで定義したメソッドは、テストコードの実行前に以下のような処理を行いたい場合に、呼び出すことができます。
+
+- ログイン
+- アクセストークンの取得
+- ログアウト
 
 <details>
 
 <summary>Pre-requestスクリプトの設定例</summary>
+
+    
+`endpointConfig`の設定を環境に合わせて書き換えてください。
 
 ```js
 postman.setGlobalVariable('kuroco', (apiConfig = {apiId: 1}) => {
@@ -205,6 +211,16 @@ postman.setGlobalVariable('kuroco', (apiConfig = {apiId: 1}) => {
 ```
 
 </details>
+
+### Collection variablesの設定
+全リクエストで共通利用する変数を[Collection variables](https://learning.postman.com/docs/sending-requests/variables/#choosing-variables)として定義します。
+
+必須の設定項目
+
+| 変数名 | 例 | 説明 |
+| :- | :- | :- |
+| baseUrl | `https://your-site.g.kuroco.app` | APIエンドポイントのURLを指定してください。 |
+
 
 ## APIテストコードの作成
 
@@ -454,17 +470,17 @@ environmentファイルは複数作成することが可能です。
 ![Change environments](./images/environment2.png)
 
 #### Globalsファイル
-    コレクション間で共通のスクリプトを定義したい場合は、globalsファイルを利用します。  
-    <!-- https://diverta.gyazo.com/bbadcf4f82827a7355874bdb25654f37 -->
-    ![Globals](./images/globals.png)
+コレクション間で共通のスクリプトを定義したい場合は、globalsファイルを利用します。  
+<!-- https://diverta.gyazo.com/bbadcf4f82827a7355874bdb25654f37 -->
+![Globals](./images/globals.png)
 
-    globalsファイルに定義したスクリプトは、Pre-requestと同様、以下のように使用することができます。
-    ```js
-    const kuroco = eval(globals.kuroco)({apiId: 1});
-    kuroco.generateToken({
-        ...
-    });
-    ```
+globalsファイルに定義したスクリプトは、Pre-requestと同様、以下のように使用することができます。
+```js
+const kuroco = eval(globals.kuroco)({apiId: 1});
+kuroco.generateToken({
+    ...
+});
+```
 
 #### kuroco-newman.config.jsonの設定
 以下のように、保存したenvironment/globalsファイルの名称を指定します。  
