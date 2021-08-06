@@ -300,7 +300,7 @@ kuroco.login({
 
 テストの記述が完了したら、作成したPostmanのコレクションファイルを[エクスポート](https://learning.postman.com/docs/getting-started/importing-and-exporting-data/#exporting-collections)します。
 
-次にインポートしたファイルを、`kuroco-newman init`で自動生成された`collections`ディレクトリに、下記の構成で配置します。  
+エクスポートしたファイルを、`kuroco-newman init`で自動生成された`collections`ディレクトリに、下記の構成で配置します。  
 collections配下のディレクトリについては、手動で作成する必要があります。
 
 ```
@@ -328,10 +328,14 @@ kuroco-newman-sample
 `-- fixtures
 ```
 
+## テストコードの実行
+
 ### configファイルの設定
 
-kuroco-newman.config.json の `target` を編集します。  
-この時、各種ディレクトリやファイルの名前と合わせるようにします。
+保存したコレクションをcliから実行するためには、設定ファイルに実行対象のファイルを定義する必要があります。
+
+kuroco-newman.config.json を開き、 `target` を編集します。  
+この時、コレクションを配置した各種ディレクトリ・ファイルの名前と合わせるようにします。
 
 #### 例
 
@@ -348,9 +352,6 @@ kuroco-newman.config.json の `target` を編集します。
     ]
 }
 ```
-
-
-## テストコードの実行
 
 ### ローカル環境での動作確認
 以下のコマンドでテストが動きます。
