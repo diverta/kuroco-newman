@@ -21,7 +21,7 @@ npx kuroco-newman init
 | target site name |  | テスト実行対象となるサイトの名称を指定します。 |
 
 <!-- https://diverta.gyazo.com/0fff117cedb27ba6d52a04eeb2c1f8c3 -->
-![kuroco-newman init](./images/kuroco-newman_init.gif)
+![kuroco-newman init](./images/tutorial/kuroco-newman_init.gif)
 
 入力完了後、カレントディレクトリ内に以下のファイル・フォルダが生成されます。
 ```
@@ -244,7 +244,7 @@ postman.setGlobalVariable('kuroco', (apiConfig = {apiId: 1}) => {
 1シナリオにつき1フォルダを作成し、その中に必要な各リクエストを格納します。  
 
 <!-- https://diverta.gyazo.com/bf8db63513bcbee00b46e8eed064ce8c -->
-![Add folder](./images/add_folder1.png)
+![Add folder](./images/tutorial/add_folder1.png)
 
 シナリオフォルダのPre-requestに、認証を行うコードを追加します。
 ```js
@@ -255,7 +255,7 @@ kuroco.login({
 });
 ```
 <!-- https://diverta.gyazo.com/57f49e8486ae95b917a088f2063a4946 -->
-<!-- ![Add Pre-request](./images/add_folder2.png) -->
+<!-- ![Add Pre-request](./images/tutorial/add_folder2.png) -->
 
 ### リクエストの追加
 1. コンテンツの新規追加 (`Topics::insert`)
@@ -264,7 +264,7 @@ kuroco.login({
 
     レスポンスのidなどの値を他のリクエストで使うため、Testsスクリプトで`pm.variables`を用いて値を変数に保存します。
     <!-- https://diverta.gyazo.com/a6e192518c304537bb4d53bba00f022c -->
-    ![Set variables](./images/add_request1.png)
+    ![Set variables](./images/tutorial/add_request1.png)
 
 2. 追加したコンテンツの取得 (`Topics::details`)
 
@@ -272,7 +272,7 @@ kuroco.login({
 
     先ほど保存した変数を利用して、リクエストのパラメータを構成します。
     <!-- https://diverta.gyazo.com/91c16ba3b9f58d0db474745ffc75548e -->
-    ![Set parameter](./images/add_request2.png)
+    ![Set parameter](./images/tutorial/add_request2.png)
 
 3. 取得結果のアサーション
 
@@ -293,14 +293,14 @@ kuroco.login({
 4. テストの実行  
     テストコードの記述が完了したら、作成したシナリオのフォルダ -> [Run] の順にクリックしてテストを実行し、期待通りに動作することを確認してください。
     <!-- https://diverta.gyazo.com/9e022bcc0587ba123bc8ebf9cf72ace6 -->
-    ![Run tests](./images/add_request3.gif)
+    ![Run tests](./images/tutorial/add_request3.gif)
 
 
 ### テストコードの保存
 
 テストの記述が完了したら、作成したPostmanのコレクションファイルを[エクスポート](https://learning.postman.com/docs/getting-started/importing-and-exporting-data/#exporting-collections)します。
 
-次にインポートしたファイルを、`kuroco-newman init`で自動生成された`collections`ディレクトリに、下記の構成で配置します。  
+エクスポートしたファイルを、`kuroco-newman init`で自動生成された`collections`ディレクトリに、下記の構成で配置します。  
 collections配下のディレクトリについては、手動で作成する必要があります。
 
 ```
@@ -328,10 +328,14 @@ kuroco-newman-sample
 `-- fixtures
 ```
 
+## テストコードの実行
+
 ### configファイルの設定
 
-kuroco-newman.config.json の `target` を編集します。  
-この時、各種ディレクトリやファイルの名前と合わせるようにします。
+保存したコレクションをcliから実行するためには、設定ファイルに実行対象のファイルを定義する必要があります。
+
+kuroco-newman.config.json を開き、 `target` を編集します。  
+この時、コレクションを配置した各種ディレクトリ・ファイルの名前と合わせるようにします。
 
 #### 例
 
@@ -349,9 +353,6 @@ kuroco-newman.config.json の `target` を編集します。
 }
 ```
 
-
-## テストコードの実行
-
 ### ローカル環境での動作確認
 以下のコマンドでテストが動きます。
 ```sh
@@ -360,7 +361,7 @@ npx kuroco-newman run
 
 完了後、kuroco-newman.config.jsonの`report.outputDir`で指定したディレクトリに、テスト結果のレポートが出力されます。  
 <!-- https://diverta.gyazo.com/bc6206309b15a477c5fea0be14e015c8 -->
-![Reports](./images/report.png)
+![Reports](./images/tutorial/report.png)
 
 ### GitHub Actionsの設定
 作成したテストを自動実行させるため、GitHub Actionsのワークフローを設定します。
@@ -478,17 +479,17 @@ jobs:
 #### Environmentファイル
 コレクション間で共通の環境変数を定義したい場合は、[Environment](https://learning.postman.com/docs/sending-requests/managing-environments/)ファイルを利用します。  
 <!-- https://diverta.gyazo.com/584cdd26b1648aaceb5e1e139de78476 -->
-![Environments](./images/environment1.png)
+![Environments](./images/tutorial/environment1.png)
 
 environmentファイルは複数作成することが可能です。  
 参照先のファイルは画面右上のプルダウンから切り替えることができます。
 <!-- https://diverta.gyazo.com/11a9fd7bd9fd456da0e85fa77c0dd1f8 -->
-![Change environments](./images/environment2.png)
+![Change environments](./images/tutorial/environment2.png)
 
 #### Globalsファイル
 コレクション間で共通のスクリプトを定義したい場合は、globalsファイルを利用します。  
 <!-- https://diverta.gyazo.com/bbadcf4f82827a7355874bdb25654f37 -->
-![Globals](./images/globals.png)
+![Globals](./images/tutorial/globals.png)
 
 globalsファイルに定義したスクリプトは、Pre-requestと同様、以下のように使用することができます。
 ```js
@@ -530,17 +531,17 @@ Postmanで [Import] -> [File] を選び、インストール時に取得したop
 
 *Generate collection from imported APIs* をチェックすると、インポート時に各エンドポイントに対するリクエストを含むコレクションが自動で生成されるようになります。チェックを外すと、コレクションを全て手動で作成する必要が出てくるため、チェックしておくことを推奨します。
 <!-- https://diverta.gyazo.com/7f055ad7b9ff2b1d617806f585c8bfc0 -->
-![Generate collection from imported APIs](./images/import_openapi1.png)
+![Generate collection from imported APIs](./images/tutorial/import_openapi1.png)
 
 インポートが完了すると、以下のようなコレクションファイルが生成されます。  
 <!-- https://diverta.gyazo.com/8952b8018e66fe3893b319eb5648a9e0 -->
-![Generated collection](./images/import_openapi2.png)
+![Generated collection](./images/tutorial/import_openapi2.png)
 
 インポート直後のコレクションでは、各リクエストのパラメータにダミーの初期値が設定されています。
 <!-- https://diverta.gyazo.com/353aaaf45f0c68bcedcd22d6a17b6b08 -->
-![Parameter values](./images/import_openapi3.png)
+![Parameter values](./images/tutorial/import_openapi3.png)
 
 不要なパラメータは削除あるいは無効化して、必要なパラメータは適切な値に書き換える必要があります。
 <!-- https://diverta.gyazo.com/4db17b0f438b8b5b0e217ff75ff0156e -->
-![Parameter values](./images/import_openapi4.png)
+![Parameter values](./images/tutorial/import_openapi4.png)
 
