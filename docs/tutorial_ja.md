@@ -1,51 +1,21 @@
 # kuroco-newman 導入方法
 
-## インストール
-初めに、E2Eテストを導入する対象のリポジトリにkuroco-newmanをインストールします。
-```sh
-npm install --save-dev github:diverta/kuroco-newman
-```
-
-インストールが完了したら、`kuroco-newman init`を実行し、テストの実行に必要なファイル・ディレクトリの初期化を行います。
-
-```sh
-npx kuroco-newman init
-```
-
-画面の指示に従い、必要な項目を入力してください。
-
-| 入力項目 | デフォルト値 | 説明 |
-| :- | :- | :- |
-| tests base directory | `tests` | テストコードを管理するためのディレクトリを指定します。 |
-| report output directory | `reports` | テストレポートを出力するためのディレクトリを指定します。 |
-| target site name |  | テスト実行対象となるサイトの名称を指定します。 |
-
-<!-- https://diverta.gyazo.com/0fff117cedb27ba6d52a04eeb2c1f8c3 -->
-![kuroco-newman init](./images/tutorial/kuroco-newman_init.gif)
-
-入力完了後、カレントディレクトリ内に以下のファイル・フォルダが生成されます。
-```
-.
-|-- {report output directory}
-|-- {tests base directory}
-|   `-- {target site name}
-|       |-- collections
-|       |-- environments
-|       `-- fixtures
-`-- kuroco-newman.config.json
-```
-
-## Postmanコレクションファイルの作成
+## Postmanコレクションファイルの準備
+初めに次の手順で、Postmanのテストを作成するためのコレクションファイルを準備します。
 
 ### ワークスペースの作成
 Postmanのワークスペースを作成します。ワークスペースはテスト対象のサイト毎に作成することを推奨します。
 
+![Add workspace](./images/tutorial/add_workspace.gif)
+
 ### コレクションの作成
-Postmanのコレクションを作成します。
+Postmanのコレクションファイルを作成します。
+
+![Add collection](./images/tutorial/add_collection.gif)
 
 ### Pre-request scriptの設定
 
-[Pre-request script](https://learning.postman.com/docs/writing-scripts/pre-request-scripts/)を利用すると、テストコードの前処理を定義することができます。   
+[Pre-request script](https://learning.postman.com/docs/writing-scripts/pre-request-scripts/)を利用すると、テストコードの前処理を定義することができます。  
 これを利用して、コレクション内のテストスクリプトで共通利用するためのメソッドを定義します。
 
 各リクエストの実行前に以下のような処理を行いたい場合に、ここで定義したメソッドを利用することができます。
@@ -53,6 +23,16 @@ Postmanのコレクションを作成します。
 - ログイン
 - アクセストークンの取得
 - ログアウト
+
+Pre-requestは次の手順で設定します。
+1. 作成したコレクションを選択
+2. [Pre-request Script] タブを選択
+3. スクリプトを記述
+4. [Save] をクリックし保存
+
+![Add collection pre-requst](./images/tutorial/add_collection_pre_request.png)
+
+設定するスクリプトは、下記の「Pre-requestスクリプトの設定例」を参考に記述してください。
 
 <details>
 
@@ -214,28 +194,51 @@ postman.setGlobalVariable('kuroco', (apiConfig = {apiId: 1}) => {
 ### Collection variablesの設定
 全リクエストで共通利用する変数を[Collection variables](https://learning.postman.com/docs/sending-requests/variables/#choosing-variables)として定義します。
 
-必須の設定項目
+Collection variablesは次の手順で設定します。
+
+1. 作成したコレクションを選択
+2. [Variables] タブを選択
+3. 変数を定義
+4. [Save] をクリックし保存
+
+![Add collection variables](./images/tutorial/add_collection_variables.png)
+
+#### 必須の設定項目
+
+以下の変数については必ず設定してください。事前に定義したPre-request scriptから参照されます。
 
 | 変数名 | 例 | 説明 |
 | :- | :- | :- |
 | baseUrl | `https://your-site.g.kuroco.app` | APIエンドポイントのURLを指定してください。 |
 
 
-## APIテストコードの作成
+## テストの作成
 
 コレクションファイルの準備が完了したら、テストを作成していきます。  
 ここでは以下のシナリオを元に、APIの結合テストを作成します。
 
+### シナリオ
+#### API設定
+
+|エンドポイント|モデル::操作|概要|認証|
+|:-|:-|:-|:-|
+|auth/login|Login::login_challenge|ログイン (Cookie認証)||
+|topics1|Topics::details|コンテンツ取得|有り|
+|topics1/insert|Topics::insert|コンテンツ追加|有り|
+
+#### テスト内容
 1. コンテンツを追加する
 2. 追加したコンテンツを取得する
 3. (1)で送信した内容が正しく保存されているかをテストする
 
-このシナリオをPostman上の作業に当てはめると、以下のようになります。
+このシナリオをPostman上の作業に当てはめると、次のようになります。
 
-1. コンテンツの新規追加リクエストを作成
-    - `Topics::insert`を設定したエンドポイントを呼び出す
+1. ログイン
+    - `auth/login`を呼び出し、認証を行う
+2. コンテンツの新規追加リクエストを作成
+    - `topics1/insert`を呼び出し、コンテンツを追加
 3. 追加したコンテンツの取得リクエストを作成
-    - `Topics::details`を設定したエンドポイントを呼び出す
+    - `topics1`を呼び出し、(1)で追加したコンテンツを取得
     - 取得結果のアサーションを行う
 
 ### フォルダの作成
@@ -246,7 +249,13 @@ postman.setGlobalVariable('kuroco', (apiConfig = {apiId: 1}) => {
 <!-- https://diverta.gyazo.com/bf8db63513bcbee00b46e8eed064ce8c -->
 ![Add folder](./images/tutorial/add_folder1.png)
 
-シナリオフォルダのPre-requestに、認証を行うコードを追加します。
+<!-- https://diverta.gyazo.com/57f49e8486ae95b917a088f2063a4946 -->
+<!-- ![Add Pre-request](./images/tutorial/add_folder2.png) -->
+
+### リクエストの追加
+#### 1. ログイン
+
+シナリオフォルダの[Pre-request]タブを選択し、以下のようにログイン処理を追加して保存します。
 ```js
 const kuroco = eval(globals.kuroco)({apiId: 1});
 kuroco.login({
@@ -254,51 +263,87 @@ kuroco.login({
     password: "your_password"
 });
 ```
-<!-- https://diverta.gyazo.com/57f49e8486ae95b917a088f2063a4946 -->
-<!-- ![Add Pre-request](./images/tutorial/add_folder2.png) -->
 
-### リクエストの追加
-1. コンテンツの新規追加 (`Topics::insert`)
+#### 1. コンテンツの新規追加リクエストを作成
 
-    コンテンツを追加するリクエスト (`Topics::insert`を設定したエンドポイントへのリクエスト) をコレクションに追加します。
-
-    レスポンスのidなどの値を他のリクエストで使うため、Testsスクリプトで`pm.variables`を用いて値を変数に保存します。
-    <!-- https://diverta.gyazo.com/a6e192518c304537bb4d53bba00f022c -->
-    ![Set variables](./images/tutorial/add_request1.png)
-
-2. 追加したコンテンツの取得 (`Topics::details`)
-
-    追加したコンテンツを取得するリクエスト (`Topics::details`を設定したエンドポイントへのリクエスト) を、コンテンツ追加リクエストの後ろに追加します。
-
-    先ほど保存した変数を利用して、リクエストのパラメータを構成します。
-    <!-- https://diverta.gyazo.com/91c16ba3b9f58d0db474745ffc75548e -->
-    ![Set parameter](./images/tutorial/add_request2.png)
-
-3. 取得結果のアサーション
-
-    コンテンツ取得リクエストのTestsスクリプトに、取得結果に対するアサーションを追加します。  
-
-    - 例
-        ```js
-        pm.test("Response check", function () {
-            const jsonData = pm.response.json();
-            pm.expect(jsonData.details).to.exist;
-
-            pm.expect(jsonData.details.topics_id, "topics_id").to.eql(pm.variables.get("topics_id"));
-            pm.expect(jsonData.details.subject, "subject").to.eql("Insert Test");
-            pm.expect(jsonData.details.ext_col_01, "ext_col_01").to.eql("test");
-        });
-        ```
-
-4. テストの実行  
-    テストコードの記述が完了したら、作成したシナリオのフォルダ -> [Run] の順にクリックしてテストを実行し、期待通りに動作することを確認してください。
-    <!-- https://diverta.gyazo.com/9e022bcc0587ba123bc8ebf9cf72ace6 -->
-    ![Run tests](./images/tutorial/add_request3.gif)
+`topics1/insert`へのリクエストをコレクションに追加します。
 
 
-### テストコードの保存
 
-テストの記述が完了したら、作成したPostmanのコレクションファイルを[エクスポート](https://learning.postman.com/docs/getting-started/importing-and-exporting-data/#exporting-collections)します。
+レスポンスのidを次のリクエストで参照できるようにするため、Testsスクリプトで`pm.variables`を用いて値を保存します。
+<!-- https://diverta.gyazo.com/a6e192518c304537bb4d53bba00f022c -->
+![Set variables](./images/tutorial/add_request1.png)
+
+#### 2. 追加したコンテンツの取得リクエストを作成
+
+`topics1`へのリクエストを、コンテンツ追加リクエストの後ろに追加します。
+
+先ほど保存した変数を利用して、リクエストのパラメータを構成します。
+<!-- https://diverta.gyazo.com/91c16ba3b9f58d0db474745ffc75548e -->
+![Set parameter](./images/tutorial/add_request2.png)
+
+#### 3. 取得結果のアサーション
+
+コンテンツ取得リクエストのTestsスクリプトに、取得結果に対するアサーションを追加します。  
+
+```js
+pm.test("Response check", function () {
+    const jsonData = pm.response.json();
+    pm.expect(jsonData.details).to.exist;
+
+    pm.expect(jsonData.details.topics_id, "topics_id").to.eql(pm.variables.get("topics_id"));
+    pm.expect(jsonData.details.subject, "subject").to.eql("Insert Test");
+    pm.expect(jsonData.details.ext_col_01, "ext_col_01").to.eql("test");
+});
+```
+
+テストコードの記述が完了したら、作成したシナリオのフォルダ -> [Run] の順にクリックしてテストを実行し、期待通りに動作することを確認してください。
+<!-- https://diverta.gyazo.com/9e022bcc0587ba123bc8ebf9cf72ace6 -->
+![Run tests](./images/tutorial/add_request3.gif)
+
+### コレクションファイルの保存
+
+テストの記述が完了したら、作成したPostmanのコレクションファイルを任意のフォルダに[エクスポート](https://learning.postman.com/docs/getting-started/importing-and-exporting-data/#exporting-collections)し、保存します。
+
+
+## kuroco-newmanへの適用
+
+テストの作成が完了したら、作成したファイルをkuroco-newmanで動かせるよう設定します。
+
+### インストール
+初めに、E2Eテストを導入する対象のリポジトリにkuroco-newmanをインストールします。
+```sh
+npm install --save-dev github:diverta/kuroco-newman
+```
+
+インストールが完了したら、`kuroco-newman init`を実行し、テストの実行に必要なファイル・ディレクトリの初期化を行います。
+
+```sh
+npx kuroco-newman init
+```
+
+画面の指示に従い、必要な項目を入力してください。
+
+| 入力項目 | デフォルト値 | 説明 |
+| :- | :- | :- |
+| tests base directory | `tests` | テストコードを管理するためのディレクトリを指定します。 |
+| report output directory | `reports` | テストレポートを出力するためのディレクトリを指定します。 |
+| target site name |  | テスト実行対象となるサイトの名称を指定します。 |
+
+<!-- https://diverta.gyazo.com/0fff117cedb27ba6d52a04eeb2c1f8c3 -->
+![kuroco-newman init](./images/tutorial/kuroco-newman_init.gif)
+
+入力完了後、カレントディレクトリ内に以下のファイル・フォルダが生成されます。
+```
+.
+|-- {report output directory}
+|-- {tests base directory}
+|   `-- {target site name}
+|       |-- collections
+|       |-- environments
+|       `-- fixtures
+`-- kuroco-newman.config.json
+```
 
 エクスポートしたファイルを、`kuroco-newman init`で自動生成された`collections`ディレクトリに、下記の構成で配置します。  
 collections配下のディレクトリについては、手動で作成する必要があります。
@@ -311,24 +356,22 @@ collections配下のディレクトリについては、手動で作成する必
             `- {Postman collection file}    # *.postman_collection.json
 ```
 
-#### 例
+今回は、次のようにファイルを配置します。
 ```sh
-cd tests/kuroco-newman-sample
+cd tests/kuroco-newman-example
 mkdir -p collections/5/integration
-mv path/to/Kuroco-newman-sample-scenario.postman_collection.json collections/5/integration
+mv path/to/Kuroco-newman-example-scenario.postman_collection.json collections/5/integration
 ```
 
 ```
-kuroco-newman-sample
+kuroco-newman-example
 |-- collections
 |   `-- 5
 |       `-- integration
-|           `- Kuroco-newman-sample-scenario.postman_collection.json
+|           `- Kuroco-newman-example-scenario.postman_collection.json
 |-- environments
 `-- fixtures
 ```
-
-## テストコードの実行
 
 ### configファイルの設定
 
@@ -337,11 +380,10 @@ kuroco-newman-sample
 kuroco-newman.config.json を開き、 `target` を編集します。  
 この時、コレクションを配置した各種ディレクトリ・ファイルの名前と合わせるようにします。
 
-#### 例
 
 ```jsonc
 {
-    "name": "kuroco-newman-sample", 
+    "name": "kuroco-newman-example", 
     "collections": [
         {
             "id": "5",
@@ -354,7 +396,7 @@ kuroco-newman.config.json を開き、 `target` を編集します。
 ```
 
 ### ローカル環境での動作確認
-以下のコマンドでテストが動きます。
+ファイルの配置・configファイルの設定が完了したら、以下のコマンドでテストを実行します。
 ```sh
 npx kuroco-newman run
 ```
@@ -362,6 +404,8 @@ npx kuroco-newman run
 完了後、kuroco-newman.config.jsonの`report.outputDir`で指定したディレクトリに、テスト結果のレポートが出力されます。  
 <!-- https://diverta.gyazo.com/bc6206309b15a477c5fea0be14e015c8 -->
 ![Reports](./images/tutorial/report.png)
+
+レポートを確認し、想定通りのテスト結果が出力されているかを確認してください。
 
 ### GitHub Actionsの設定
 作成したテストを自動実行させるため、GitHub Actionsのワークフローを設定します。
@@ -422,7 +466,7 @@ jobs:
 
 レポートをデプロイする必要がある場合は、`report.outputDir`配下のファイルをアップロードするよう個別に設定してください。
 
-## リモートリポジトリへの反映
+### リモートリポジトリへの反映
 
 全ての作業が完了したら、作成したファイルをGitHubにリモートリポジトリに反映します。  
 
