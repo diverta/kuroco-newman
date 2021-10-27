@@ -88,46 +88,58 @@ class CollectionRunner {
   runAll() {
     this.reportGenerator.initReportDir();
 
-    const runCollectionPromises = [];
-    this.newmanConfig.target.forEach((site) => {
-      site.collections.forEach((api) => {
-        Object.keys(api.files).forEach((testType) => {
-          const environmentFile = site.environment
-            ? `${this.files.getEnvironmentsDir(site.name)}/${site.environment}`
-            : '';
-          const globalsFile = site.globals
-            ? `${this.files.getEnvironmentsDir(site.name)}/${site.globals}`
-            : '';
+    const allRunArguments = this.newmanConfig.target.map((site) =>
+      this.makeSiteCollectionsRunArguments(site)
+    );
 
-          const collectionFilesPattern = path.join(
-            this.files.getCollectionsDir(site.name, api.id, testType),
-            api.files[testType]
-          );
-          const collectionFiles = glob.sync(collectionFilesPattern);
+    const runAll = (async () => {
+      const allResults = [];
+      for (const runArguments of allRunArguments) {
+        allResults.push(
+          await Promise.all(
+            runArguments.map((runArg) => this.run(...Object.values(runArg)))
+          )
+        );
+      }
+      const reportIndexHtml = this.reportGenerator.generateIndexHtml();
+      this.reportGenerator.writeIndex(reportIndexHtml);
+      return allResults;
+    })();
 
-          collectionFiles.forEach((collectionFile) => {
-            runCollectionPromises.push(
-              this.run(
-                collectionFile,
-                environmentFile,
-                globalsFile,
-                site.name,
-                api.id,
-                testType,
-                site.alias
-              )
-            );
+    return Promise.resolve(runAll);
+  }
+
+  makeSiteCollectionsRunArguments(site) {
+    const runArguments = [];
+    site.collections.forEach((api) => {
+      Object.keys(api.files).forEach((testType) => {
+        const environmentFile = site.environment
+          ? `${this.files.getEnvironmentsDir(site.name)}/${site.environment}`
+          : '';
+        const globalsFile = site.globals
+          ? `${this.files.getEnvironmentsDir(site.name)}/${site.globals}`
+          : '';
+
+        const collectionFilesPattern = path.join(
+          this.files.getCollectionsDir(site.name, api.id, testType),
+          api.files[testType]
+        );
+        const collectionFiles = glob.sync(collectionFilesPattern);
+
+        collectionFiles.forEach((collectionFile) => {
+          runArguments.push({
+            collectionFile,
+            environmentFile,
+            globalsFile,
+            siteName: site.name,
+            apiId: api.id,
+            testType,
+            alias: site.alias,
           });
         });
       });
     });
-
-    return Promise.allSettled(runCollectionPromises).then((results) => {
-      const reportIndexHtml = this.reportGenerator.generateIndexHtml();
-      this.reportGenerator.writeIndex(reportIndexHtml);
-
-      return Promise.resolve(results);
-    });
+    return runArguments;
   }
 }
 
