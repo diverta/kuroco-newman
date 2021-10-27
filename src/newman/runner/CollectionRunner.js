@@ -96,7 +96,7 @@ class CollectionRunner {
       const allResults = [];
       for (const runArguments of allRunArguments) {
         allResults.push(
-          await Promise.all(
+          await Promise.allSettled(
             runArguments.map((runArg) => this.run(...Object.values(runArg)))
           )
         );
