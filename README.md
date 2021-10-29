@@ -20,7 +20,7 @@ You can use `kuroco-newman` cli to initialize your repository and run/manage you
 ### Initialization
 
 ```
-kuroco-newman init
+npx kuroco-newman init
 ```
 
 ### Run Postman collections
