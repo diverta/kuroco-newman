@@ -88,25 +88,24 @@ class CollectionRunner {
   runAll() {
     this.reportGenerator.initReportDir();
 
-    const allRunArguments = this.newmanConfig.target.map((site) =>
+    const allRunArguments = this.newmanConfig.target.flatMap((site) =>
       this.makeSiteCollectionsRunArguments(site)
     );
 
-    const runAll = (async () => {
+    return (async () => {
       const allResults = [];
       for (const runArguments of allRunArguments) {
-        allResults.push(
-          await Promise.allSettled(
-            runArguments.map((runArg) => this.run(...Object.values(runArg)))
-          )
-        );
+        try {
+          const result = await this.run(...Object.values(runArguments));
+          allResults.push({ status: 'fulfilled', value: result });
+        } catch (e) {
+          allResults.push({ status: 'rejected', reason: e });
+        }
       }
       const reportIndexHtml = this.reportGenerator.generateIndexHtml();
       this.reportGenerator.writeIndex(reportIndexHtml);
       return allResults;
     })();
-
-    return Promise.resolve(runAll);
   }
 
   makeSiteCollectionsRunArguments(site) {
