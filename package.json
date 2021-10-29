@@ -11,7 +11,7 @@
   "scripts": {},
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sakaguchi-diverta/kuroco-newman.git"
+    "url": "git+https://github.com/diverta/kuroco-newman.git"
   },
   "dependencies": {
     "commander": "^8.0.0",
