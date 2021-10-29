@@ -95,7 +95,6 @@ class CollectionRunner {
     return (async () => {
       const allResults = [];
       for (const runArguments of allRunArguments) {
-        console.log(runArguments);
         try {
           const result = await this.run(...Object.values(runArguments));
           allResults.push({ status: 'fulfilled', value: result });
