@@ -75,7 +75,7 @@ class ReportGenerator {
   }
 
   initReportDir() {
-    fs.rmdirSync(this.reportsPath.baseDir, { recursive: true });
+    fs.rmSync(this.reportsPath.baseDir, { force: true, recursive: true });
     fs.mkdirSync(this.reportsPath.baseDir, { recursive: true });
   }
 
