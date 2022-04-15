@@ -30,7 +30,7 @@ npx kuroco-newman init
 npx kuroco-newman run
 
 # Run only specific Postman collection
-npx kuroco-newman run -e path/to/your/environment_file -f path/to/your/collection_file
+npx kuroco-newman run -e path/to/your/environment_file -c path/to/your/collection_file
 ```
 
 
