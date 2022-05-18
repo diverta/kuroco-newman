@@ -444,8 +444,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           persist-credentials: false
-      - name: Set PAT (Personal Access Token)
-        run: git config --global url."https://${{ secrets.PAT }}@github.com/".insteadOf ssh://git@github.com/
       - name: Install Dependencies
         run: npm install
       - name: Run All Collections
