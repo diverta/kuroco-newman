@@ -419,13 +419,6 @@ package.jsonのscriptsに以下を追記します。
 "test:newman": "npx kuroco-newman run"
 ```
 
-#### PATの設定
-注) kuroco-newmanのpublicリポジトリ化を検討しています。公開リポジトリに変更された場合、以下のPAT設定フローは不要になります。
-
-1. repo権限を持つGitHubのPersonal access tokensを発行します。
-2. 発行したトークンを、Actions secretsの`PAT`として設定します。
-
-
 #### workflowファイルの作成
 GitHub Actionsのworkflowファイルを設定します。  
 
