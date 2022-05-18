@@ -13,6 +13,9 @@ You need to follow the steps below at least to use kuroco-newman package.
 1. Put Postman collection files under specific directory structure
 2. Create `kuroco-newman.config.json`
 
+## Tutorial
+See [tutorial_ja.md](/docs/tutorial_ja.md) (Japanese version only)
+
 ## kuroco-newman cli
 
 You can use `kuroco-newman` cli to initialize your repository and run/manage your collection files.
@@ -32,7 +35,6 @@ npx kuroco-newman run
 # Run only specific Postman collection
 npx kuroco-newman run -e path/to/your/environment_file -c path/to/your/collection_file
 ```
-
 
 ## Reference
 ### Directory structure
