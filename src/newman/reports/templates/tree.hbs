@@ -1,0 +1,18 @@
+<li>
+    {{#ifLastItem this}}
+        {{!-- collections --}}
+        <a href="{{href}}" class="u-mr5">{{@key}}.html</a>
+        {{#if failures}}
+        <span class="c-label c-label--red">Failed: {{failures}}</span>
+        {{else}}
+        <span class="c-label">Success</span>
+        {{/if}}
+    {{else}}
+        {{@key}}
+        <ul>
+            {{#each this}}
+                {{include "./tree.hbs" key=@key}}
+            {{/each}}
+        </ul>
+    {{/ifLastItem}}
+</li>

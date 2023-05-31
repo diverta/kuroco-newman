@@ -6,6 +6,19 @@ const moment = require('moment-timezone');
 
 const Files = require('../runner/Files.js');
 
+handlebars.registerHelper('include', function (file, options) {
+  const filePath = path.resolve(__dirname, 'templates', file);
+  const template = handlebars.compile(fs.readFileSync(filePath, 'UTF-8'));
+  return new handlebars.SafeString(template(this, { data: options.hash }));
+});
+handlebars.registerHelper('ifLastItem', function (item, options) {
+  if (typeof item !== 'object' || item.href !== undefined) {
+    return options.fn(this);
+  } else {
+    return options.inverse(this);
+  }
+});
+
 class ReportGenerator {
   constructor(newmanConfig) {
     const baseDir = path.resolve(process.cwd(), newmanConfig.report.outputDir);
@@ -106,36 +119,60 @@ class ReportGenerator {
     const reports = {};
 
     glob
-      .sync(`${this.reportsPath.baseDir}/*/*/*/*.html`)
+      .sync(`${this.reportsPath.baseDir}/**/*.html`)
       .forEach((absolutePath) => {
         const relPath = absolutePath.replace(`${process.cwd()}/`, '');
         const href = relPath.replace(/^(\.\/)?reports\//, '');
-        const [site, id, type, fileName] = href.split('/', 4);
+
+        const path_parts = href.split('/', 4);
+        const [site, id, type, fileName] =
+          path_parts.length === 4
+            ? path_parts
+            : [path_parts[0], undefined, path_parts[1], path_parts[2]];
+
         const collectionName = fileName.replace(/\.html$/, '');
+
+        // check summary
+        const summary = JSON.parse(
+          fs.readFileSync(
+            Files.joinPath(
+              this.reportsPath.summaryDir,
+              site,
+              id,
+              type,
+              `${collectionName}.json`
+            )
+          )
+        );
+
         if (!reports.hasOwnProperty(site)) {
           const targetConfig = this.mapping[site];
-          reports[site] = { apis: {} };
+          reports[site] = { targets: {} };
           if (typeof targetConfig.alias === 'string') {
             reports[site].originalName = targetConfig.name;
           }
         }
-        if (!reports[site].apis.hasOwnProperty(id)) {
-          reports[site].apis[id] = {};
-        }
-        if (!reports[site].apis[id].hasOwnProperty(type)) {
-          reports[site].apis[id][type] = {};
-        }
-        // check summary
-        const summary = JSON.parse(
-          fs.readFileSync(
-            `${this.reportsPath.summaryDir}/${site}/${id}/${type}/${collectionName}.json`
-          )
-        );
 
-        reports[site].apis[id][type][collectionName] = {
-          href: href,
-          failures: summary.run.failures.length,
-        };
+        if (id === undefined) {
+          if (!reports[site].targets.hasOwnProperty(type)) {
+            reports[site].targets[type] = {};
+          }
+          reports[site].targets[type][collectionName] = {
+            href: href,
+            failures: summary.run.failures.length,
+          };
+        } else {
+          if (!reports[site].targets.hasOwnProperty(id)) {
+            reports[site].targets[id] = {};
+          }
+          if (!reports[site].targets[id].hasOwnProperty(type)) {
+            reports[site].targets[id][type] = {};
+          }
+          reports[site].targets[id][type][collectionName] = {
+            href: href,
+            failures: summary.run.failures.length,
+          };
+        }
       });
 
     const props = {

@@ -144,35 +144,10 @@
           {{!-- target site --}}
           {{@key}}{{#if originalName}} ({{originalName}}){{/if}}
           <ul>
-          {{#each this.apis}}
-            <li>
-              {{!-- target api --}}
-              {{@key}}
-                <ul>
-                  {{#each this}}
-                  <li>
-                    {{!-- type --}}
-                    {{@key}}
-                      <ul>
-                        {{#each this}}
-                        <li>
-                          {{!-- collections --}}
-                          <a href="{{href}}" class="u-mr5">{{@key}}.html</a>
-                          {{#if failures}}
-                            <span class="c-label c-label--red">Failed: {{failures}}</span>
-                          {{else}}
-                            <span class="c-label">Success</span>
-                          {{/if}}
-                        </li>
-                        {{/each}}
-                      </ul>
-                  </li>
-                  {{/each}}
-                </ul>
-            </li>
+          {{#each this.targets}}
+            {{include "./tree.hbs" key=@key}}
           {{/each}}
           </ul>
-        </li>
       {{/each}}
       </ul>
     </div>
