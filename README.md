@@ -47,7 +47,7 @@ npx kuroco-newman run -e path/to/your/environment_file -c path/to/your/collectio
 `-- {directory_to_put_testing_files}                    # Any directory name to put your postman files
     `-- {target_site}                                   # Any identifier for your testing target
         |-- collections                                 # Postman collections
-        |   `-- {id}                                    # Any identifier for your target API (api_id, API name, etc)   
+        |   `-- {id}                                    # [Optional] Any identifier of your target collection (API id, API name, etc)
         |       |-- {category_name_1}                   # Any category name for your collections files (unit, integration, etc)
         |       |   `-- *.postman_collection.json
         |       `-- {category_name_2}                   # (You can make multiple categories if you need)
@@ -98,7 +98,7 @@ npx kuroco-newman run -e path/to/your/environment_file -c path/to/your/collectio
       "environment": "file_name.postman_environment.json",
       "collections": [
         {
-          "id": "api_id",
+          "id": "id",
           "files": {
             "category_name": "*.json"
           }
@@ -107,4 +107,30 @@ npx kuroco-newman run -e path/to/your/environment_file -c path/to/your/collectio
     }
   ]
 }
+```
+
+### Configuration without id
+
+Collection id can be omitted. In that case, the configuration should be as follows.
+
+#### Directories
+```
+`-- collections
+    |-- unit
+    |   `-- Kuroco-test-unit.postman_collection.json
+    `-- integration
+        |-- Kuroco-test-specs-scenario.postman_collection.json
+        `-- Kuroco-test-specs-pattern.postman_collection.json
+```
+
+#### kuroco-newman.config.json
+
+```js
+"collections": [
+  {
+    "files": {
+      "category_name": "*.json"
+    }
+  }
+]
 ```

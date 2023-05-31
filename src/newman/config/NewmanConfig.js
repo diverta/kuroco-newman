@@ -81,9 +81,11 @@ class NewmanConfig {
       if (typeof target.name !== 'string') {
         return ["String 'name' should be set for each target"];
       }
-      if (typeof target.environment !== 'string') {
-        return ["String 'environment' should be set for each target"];
-      }
+      ['environment', 'globals'].forEach((key) => {
+        if (target[key] !== undefined && typeof target[key] !== 'string') {
+          return [`'${key}' should be a string`];
+        }
+      });
       const targetName =
         typeof target.alias === 'string' ? target.alias : target.name;
       if (targetNames.includes(targetName)) {
@@ -93,19 +95,21 @@ class NewmanConfig {
       if (!Array.isArray(target.collections)) {
         return ["Array 'collections' should be set for each target"];
       }
-      for (const api of target.collections) {
-        if (typeof api !== 'object') {
-          return ["Each item of array 'apis' should be an object"];
+      for (const collection of target.collections) {
+        if (typeof target !== 'object') {
+          return ["Each item of array 'collections' should be an object"];
         }
-        if (typeof api.id !== 'string') {
-          return ["String 'id' should be set for each items of 'apis'"];
+        if (collection.id !== undefined && typeof collection.id !== 'string') {
+          return ["String 'id' should be set for each item of 'collections'"];
         }
-        if (typeof api.files !== 'object') {
-          return ["Object 'files' should be set for each items of 'apis'"];
+        if (typeof collection.files !== 'object') {
+          return [
+            "Object 'files' should be set for each item of 'collections'",
+          ];
         }
-        for (const type in api.files) {
-          // glob pattern: api.files[type]
-          if (typeof api.files[type] !== 'string') {
+        for (const type in collection.files) {
+          // glob pattern: collection.files[type]
+          if (typeof collection.files[type] !== 'string') {
             return ["Each item of object 'files' should be a string"];
           }
         }

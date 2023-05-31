@@ -6,6 +6,9 @@ const Files = require('./Files.js');
 const ReportGenerator = require('../reports/ReportGenerator');
 
 class CollectionRunner {
+  newmanConfig;
+  absoluteBaseDir;
+
   constructor(newmanConfig) {
     this.newmanConfig = newmanConfig;
 
@@ -42,7 +45,7 @@ class CollectionRunner {
     environmentFile,
     globalsFile,
     targetSite,
-    apiId,
+    id,
     testType,
     alias = null
   ) {
@@ -60,16 +63,20 @@ class CollectionRunner {
           reporter: {
             htmlextra: {
               ...this.htmlextraConfig,
-              ...{
-                export: `${reportRootPath}/${targetName}/${apiId}/${testType}/${collectionName}.html`,
-              },
+              export: Files.joinPath(
+                reportRootPath,
+                targetName,
+                id,
+                testType,
+                `${collectionName}.html`
+              ),
             },
           },
           workingDir: `${this.absoluteBaseDir}/${targetSite}`,
         },
         (err, summary) => {
           this.reportGenerator.writeSummary(
-            `${targetName}/${apiId}/${testType}`,
+            Files.joinPath(targetName, id, testType),
             collectionName,
             summary
           );
@@ -110,8 +117,8 @@ class CollectionRunner {
 
   makeSiteCollectionsRunArguments(site) {
     const runArguments = [];
-    site.collections.forEach((api) => {
-      Object.keys(api.files).forEach((testType) => {
+    site.collections.forEach((collection) => {
+      Object.keys(collection.files).forEach((testType) => {
         const environmentFile = site.environment
           ? `${this.files.getEnvironmentsDir(site.name)}/${site.environment}`
           : '';
@@ -120,8 +127,8 @@ class CollectionRunner {
           : '';
 
         const collectionFilesPattern = path.join(
-          this.files.getCollectionsDir(site.name, api.id, testType),
-          api.files[testType]
+          this.files.getCollectionsDir(site.name, collection.id, testType),
+          collection.files[testType]
         );
         const collectionFiles = glob.sync(collectionFilesPattern);
 
@@ -131,7 +138,7 @@ class CollectionRunner {
             environmentFile,
             globalsFile,
             siteName: site.name,
-            apiId: api.id,
+            id: collection.id,
             testType,
             alias: site.alias,
           });

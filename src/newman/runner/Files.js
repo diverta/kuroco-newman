@@ -4,6 +4,9 @@ const fs = require('fs');
 const path = require('path');
 
 class Files {
+  newmanConfig;
+  absoluteBaseDir;
+
   constructor(newmanConfig) {
     this.newmanConfig = newmanConfig;
     this.absoluteBaseDir = path.resolve(
@@ -17,47 +20,35 @@ class Files {
   }
 
   getCollectionsDir(targetName, id, type) {
-    return `${this.absoluteBaseDir}/${targetName}/collections/${id}/${type}`;
+    return Files.joinPath(
+      this.absoluteBaseDir,
+      targetName,
+      'collections',
+      id,
+      type
+    );
   }
-
-  // getAllRunnableCollections() {
-  //   const collections = this.newmanConfig.target.reduce((list, target) => {
-  //     return [
-  //       ...list
-  //       ...target.apis.map((api) => {
-  //         return Object.keys(api.collections).reduce(
-  //           (paths, type) => [
-  //             ...paths,
-  //             ...glob.sync(
-  //               `${this.getCollectionsDir(target.name, api.id, type)}/${
-  //                 api.collections[type]
-  //               }`
-  //             ),
-  //           ],
-  //           []
-  //         );
-  //       }, []),
-  //     ];
-  //   }, []);
-  //   return [...new Set(collections.flat())];
-  // }
 
   validateDirectoryStructure() {
     for (const target of this.newmanConfig.target) {
-      const environmentFile = path.join(
-        this.getEnvironmentsDir(target.name),
-        target.environment
-      );
-      // environment file validation
-      if (!fs.existsSync(environmentFile)) {
-        const relPath = environmentFile.replace(`${process.cwd()}/`, '');
-        return [`Environment file not found: ${relPath}`];
+      let environmentFile = '';
+      if (target.environment !== undefined) {
+        environmentFile = path.join(
+          this.getEnvironmentsDir(target.name),
+          target.environment
+        );
+        // environment file validation
+        if (!fs.existsSync(environmentFile)) {
+          const relPath = environmentFile.replace(`${process.cwd()}/`, '');
+          return [`Environment file not found: ${relPath}`];
+        }
       }
-      for (const api of target.collections) {
-        for (const testType in api.files) {
+
+      for (const collection of target.collections) {
+        for (const testType in collection.files) {
           const collectionsDir = this.getCollectionsDir(
             target.name,
-            api.id,
+            collection.id,
             testType
           );
           const relPath = collectionsDir.replace(`${process.cwd()}/`, '');
@@ -73,14 +64,16 @@ class Files {
               throw err;
             }
           }
-          // const collectionFilesPattern = path.join(
-          //   this.getCollectionsDir(target.name, api.id, testType),
-          //   api.collections[testType]
-          // );
         }
       }
     }
     return [];
+  }
+
+  static joinPath(...paths) {
+    return path.join(
+      ...paths.filter((v) => v !== undefined && v !== null && v !== '')
+    );
   }
 }
 
