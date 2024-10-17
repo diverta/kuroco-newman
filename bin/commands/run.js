@@ -6,7 +6,7 @@ const glob = require('glob');
 const path = require('path');
 const fs = require('fs');
 
-module.exports = (collection, environment = '', globals = '') => {
+module.exports = (collection, environment = '', globals = '', options = {}) => {
   const { CollectionRunner } = require('../../src/newman/runner');
   const { NewmanConfig } = require('../../src/newman/config');
 
@@ -69,7 +69,9 @@ module.exports = (collection, environment = '', globals = '') => {
       globalsPath,
       targetSite,
       apiId,
-      testType
+      testType,
+      null,
+      options
     )
     .catch((err) => {
       process.exit(1);
