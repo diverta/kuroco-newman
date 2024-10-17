@@ -13,17 +13,23 @@ program
     `specify environment file`,
     ''
   )
-  .option('-g --globals <globals-file>', `specify globals file`, '')
+  .option('-g, --globals <globals-file>', `specify globals file`, '')
   .option('-c, --collection <collection>', `specify collection file`)
+  .option('-k, --insecure', `disables SSL validation`)
   .action((options) => {
+    // configure common options
+    const runOptions = {
+      ...(options.hasOwnProperty('insecure') ? { insecure: options.insecure } : {})
+    };
+
     if (options.hasOwnProperty('collection')) {
       // run specified collection
       const runCollection = require('./commands/run.js');
-      runCollection(options.collection, options.environment, options.globals);
+      runCollection(options.collection, options.environment, options.globals, runOptions);
     } else {
       // run all collections
       const runAll = require('./commands/run-all.js');
-      runAll();
+      runAll(runOptions);
     }
   });
 

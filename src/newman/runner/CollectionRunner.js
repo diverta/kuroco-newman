@@ -47,7 +47,8 @@ class CollectionRunner {
     targetSite,
     id,
     testType,
-    alias = null
+    alias = null,
+    options
   ) {
     const reportRootPath = this.reportGenerator.getRootPath();
     const targetName = alias || targetSite;
@@ -73,6 +74,7 @@ class CollectionRunner {
             },
           },
           workingDir: `${this.absoluteBaseDir}/${targetSite}`,
+          ...options,
         },
         (err, summary) => {
           this.reportGenerator.writeSummary(
@@ -92,11 +94,11 @@ class CollectionRunner {
     });
   }
 
-  runAll() {
+  runAll(options) {
     this.reportGenerator.initReportDir();
 
     const allRunArguments = this.newmanConfig.target.flatMap((site) =>
-      this.makeSiteCollectionsRunArguments(site)
+      this.makeSiteCollectionsRunArguments(site, options)
     );
 
     return (async () => {
@@ -115,7 +117,7 @@ class CollectionRunner {
     })();
   }
 
-  makeSiteCollectionsRunArguments(site) {
+  makeSiteCollectionsRunArguments(site, options) {
     const runArguments = [];
     site.collections.forEach((collection) => {
       Object.keys(collection.files).forEach((testType) => {
@@ -141,6 +143,7 @@ class CollectionRunner {
             id: collection.id,
             testType,
             alias: site.alias,
+            options,
           });
         });
       });
